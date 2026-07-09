@@ -1,0 +1,16 @@
+{
+  "name": "@ireader/test-plugin",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "test-plugin": "./bin/test-plugin.js"
+  },
+  "dependencies": {
+    "@ireader/core": "workspace:*",
+    "@ireader/plugin-system": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}

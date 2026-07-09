@@ -1,36 +1,77 @@
 import { Hono } from 'hono'
 
-// Phase 0: hardcoded mock data, no disk loading yet
-const MOCK_SOURCES = [
-  { id: 'manganato', name: 'Manganato', lang: 'en', version: '1.0.0' },
-  { id: 'mangadex', name: 'MangaDex', lang: 'en', version: '1.0.0' },
-]
+export function createSourcesRouter(pluginService: { getAllPlugins(): any[]; getPlugin(id: string): any; executePluginMethod(id: string, method: string, args: unknown[]): Promise<any> }): Hono {
+  const app = new Hono()
 
-const app = new Hono()
+  app.get('/', (c) => {
+    return c.json(pluginService.getAllPlugins())
+  })
 
-// GET /api/v1/sources — list all available sources
-app.get('/', (c) => c.json(MOCK_SOURCES))
+  app.get('/:id', (c) => {
+    const { id } = c.req.param()
+    const plugin = pluginService.getPlugin(id)
+    if (!plugin) return c.json({ error: 'Source not found', code: 'NOT_FOUND', status: 404 }, 404)
+    return c.json(plugin)
+  })
 
-// GET /api/v1/sources/:id/popular — mock popular manga
-app.get('/:id/popular', (c) => {
-  const { id } = c.req.param()
-  const page = Number(c.req.query('page')) || 1
+  app.get('/:id/popular', async (c) => {
+    const { id } = c.req.param()
+    const page = Number(c.req.query('page')) || 1
+    try {
+      return c.json(await pluginService.executePluginMethod(id, 'popular', [page]))
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
 
-  const source = MOCK_SOURCES.find((s) => s.id === id)
-  if (!source) return c.json({ error: 'Source not found', code: 'NOT_FOUND', status: 404 }, 404)
+  app.get('/:id/search', async (c) => {
+    const { id } = c.req.param()
+    const query = c.req.query('q')
+    const page = Number(c.req.query('page')) || 1
+    if (!query) return c.json({ error: 'Query parameter q is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+    try {
+      return c.json(await pluginService.executePluginMethod(id, 'search', [query, page]))
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
 
-  // Return mock manga list
-  const results = Array.from({ length: 20 }, (_, i) => ({
-    id: `${id}/manga-${(page - 1) * 20 + i + 1}`,
-    title: `${source.name} Manga #${(page - 1) * 20 + i + 1}`,
-    coverUrl: `https://via.placeholder.com/350x500?text=${encodeURIComponent(source.name)}`,
-    author: 'Author Name',
-    status: 'ongoing' as const,
-    rating: Math.round((4 + Math.random()) * 10) / 10,
-    lastUpdated: new Date().toISOString(),
-  }))
+  app.get('/:id/latest', async (c) => {
+    const { id } = c.req.param()
+    const page = Number(c.req.query('page')) || 1
+    try {
+      return c.json(await pluginService.executePluginMethod(id, 'latest', [page]))
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
 
-  return c.json(results)
-})
+  app.get('/:id/detail/:mangaId', async (c) => {
+    const { id, mangaId } = c.req.param()
+    try {
+      return c.json(await pluginService.executePluginMethod(id, 'mangaDetail', [mangaId]))
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
 
-export { app as sourcesApp }
+  app.get('/:id/chapters/:mangaId', async (c) => {
+    const { id, mangaId } = c.req.param()
+    try {
+      return c.json(await pluginService.executePluginMethod(id, 'chapters', [mangaId]))
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
+
+  app.get('/:id/pages/:chapterId', async (c) => {
+    const { id, chapterId } = c.req.param()
+    try {
+      return c.json(await pluginService.executePluginMethod(id, 'pages', [chapterId]))
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
+
+  return app
+}

@@ -2,11 +2,12 @@ export interface SandboxOptions {
   timeout?: number
   memoryLimit?: number
   allowedDomains?: string[]
+  resolveDir?: string
 }
 
 export interface SandboxInstance {
   load(pluginId: string, code: string): Promise<void>
-  execute(method: string, args: unknown[]): Promise<unknown>
+  execute(pluginId: string, method: string, args: unknown[]): Promise<unknown>
   destroy(): Promise<void>
 }
 

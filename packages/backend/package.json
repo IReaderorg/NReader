@@ -16,7 +16,8 @@
     "@ireader/core": "workspace:*",
     "@ireader/plugin-system": "workspace:*",
     "@ireader/storage": "workspace:*",
-    "hono": "^4.6.0"
+    "hono": "^4.6.0",
+    "linkedom": "^0.18.13"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

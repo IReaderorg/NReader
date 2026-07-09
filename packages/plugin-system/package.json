@@ -11,7 +11,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ireader/core": "workspace:*"
+    "@ireader/core": "workspace:*",
+    "linkedom": "^0.18.13"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

@@ -7,9 +7,9 @@ interface PluginWatcherOptions {
   pluginsDir: string
   sandbox: SandboxInstance
   debounceMs?: number
-  onLoaded?: (pluginId: string) => void
+  onLoaded?: (pluginId: string) => void | Promise<void>
   onError?: (fileName: string, error: Error) => void
-  onUnloaded?: (pluginId: string) => void
+  onUnloaded?: (pluginId: string) => void | Promise<void>
 }
 
 export class PluginLoader {
@@ -19,9 +19,9 @@ export class PluginLoader {
   private debounceMs: number
   private debounceTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private loadedPlugins = new Map<string, string>()
-  private onLoaded?: (pluginId: string) => void
+  private onLoaded?: (pluginId: string) => void | Promise<void>
   private onError?: (pluginId: string, error: Error) => void
-  private onUnloaded?: (pluginId: string) => void
+  private onUnloaded?: (pluginId: string) => void | Promise<void>
 
   constructor(options: PluginWatcherOptions) {
     this.sandbox = options.sandbox
@@ -77,7 +77,7 @@ export class PluginLoader {
 
     if (!fs.existsSync(filePath)) {
       this.loadedPlugins.delete(filename)
-      this.onUnloaded?.(pluginId)
+      await this.onUnloaded?.(pluginId)
       return
     }
 
@@ -103,7 +103,7 @@ export class PluginLoader {
 
     await this.sandbox.load(pluginId, code)
     this.loadedPlugins.set(filename, pluginId)
-    this.onLoaded?.(pluginId)
+    await this.onLoaded?.(pluginId)
   }
 
   private async scanExisting(): Promise<void> {

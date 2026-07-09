@@ -2,6 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom'
 import { ThemeToggle } from './ThemeToggle'
 import { Sidebar } from './Sidebar'
 import { MobileNav } from './MobileNav'
+import { PwaInstallPrompt } from './PwaInstallPrompt'
 import { ArrowLeft } from 'lucide-react'
 
 export function Layout() {
@@ -53,6 +54,9 @@ export function Layout() {
 
       {/* Mobile floating pill nav */}
       <MobileNav />
+
+      {/* PWA install prompt */}
+      <PwaInstallPrompt />
     </div>
   )
 }

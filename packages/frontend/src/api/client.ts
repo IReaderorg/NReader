@@ -139,4 +139,23 @@ export const api = {
     apiFetch<{ success: boolean }>(`/glossary/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteGlossaryEntry: (id: string) =>
     apiFetch<{ success: boolean }>(`/glossary/${id}`, { method: 'DELETE' }),
+
+  // Backup
+  exportBackup: async (includeCovers?: boolean): Promise<Blob> => {
+    const res = await fetch(`${BASE}/backup/export`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ includeCovers: includeCovers ?? false }),
+    })
+    if (!res.ok) throw new Error('Export failed')
+    return res.blob()
+  },
+  importBackup: (zipBase64: string, strategy?: 'merge' | 'replace') =>
+    apiFetch<{ tables: string[]; entries: number }>('/backup/import', {
+      method: 'POST',
+      body: JSON.stringify({ zipBase64, strategy: strategy ?? 'merge' }),
+    }),
+
+  // Plugin marketplace
+  getMarketplace: () => apiFetch<Array<{ id: string; name: string; description: string; type: string; version: string; author: string; installUrl: string; downloads: number; rating: number }>>('/plugins/marketplace'),
 }

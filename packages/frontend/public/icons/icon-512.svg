@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="64" fill="#1a1a2e"/>
+  <text x="256" y="256" text-anchor="middle" dominant-baseline="central" font-family="serif" font-size="200" font-weight="bold" fill="#e8c547">R</text>
+  <text x="256" y="380" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="72" fill="#e8c547" opacity="0.7">READER</text>
+</svg>

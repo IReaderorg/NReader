@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { api, type MangaDetail } from '../api/client'
 import { BookOpen, ArrowUpDown, AlertCircle, Star } from 'lucide-react'
 
 export function MangaDetailPage() {
   const { sourceId, mangaId } = useParams<{ sourceId: string; mangaId: string }>()
+  const navigate = useNavigate()
   const [manga, setManga] = useState<MangaDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -111,6 +112,7 @@ export function MangaDetailPage() {
         {chapters.map((ch, i) => (
           <div
             key={ch.id}
+            onClick={() => navigate(`/reader/${sourceId}/${encodeURIComponent(mangaId!)}/${encodeURIComponent(ch.id)}`)}
             className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors cursor-pointer active:bg-surface-hover ${
               i % 2 === 0 ? 'bg-surface/50' : 'bg-transparent'
             } hover:bg-surface-hover`}

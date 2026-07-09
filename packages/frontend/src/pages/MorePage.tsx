@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
-import { Palette, Info, Download, Puzzle, Settings, Volume2, Languages } from 'lucide-react'
+import { Palette, Info, Download, Puzzle, Settings, Volume2, Languages, HardDrive, Package } from 'lucide-react'
 
 const items = [
   { icon: Palette, label: 'Settings', desc: 'Theme, appearance, reader, storage', to: '/settings' },
   { icon: Volume2, label: 'Text-to-Speech', desc: 'Configure voice, speed, test', to: '/settings/tts' },
   { icon: Languages, label: 'Translation', desc: 'Engine, languages, glossary', to: '/settings/translation' },
+  { icon: HardDrive, label: 'Backup & Restore', desc: 'Export or import your data', to: '/backup' },
+  { icon: Package, label: 'Plugin Manager', desc: 'Browse and install plugins', to: '/plugins' },
   { icon: Download, label: 'Downloads', desc: 'Manage downloaded chapters', to: '/downloads' },
-  { icon: Settings, label: 'Sources', desc: 'Installed source plugins', to: '/settings' },
   { icon: Info, label: 'About', desc: 'IReader Next v0.0.1', to: '' },
 ]
 

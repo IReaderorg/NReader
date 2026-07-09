@@ -73,6 +73,7 @@ test.describe('Phase 4: TTS + Translation', () => {
     await targetInput.fill('Hello')
     await page.locator('text=Save').click()
     await page.waitForTimeout(500)
-    await expect(page.locator('text=Hello')).toBeVisible()
+    await expect(page.getByText('こんにちは').first()).toBeVisible()
+    await expect(page.getByText('→ Hello').first()).toBeVisible()
   })
 })

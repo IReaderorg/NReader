@@ -1,7 +1,5 @@
 import { PluginLoader } from '@ireader/plugin-system'
 import type { SandboxAdapter, SandboxInstance } from '@ireader/plugin-system'
-import fs from 'node:fs'
-import path from 'node:path'
 
 export interface SourcePluginMeta {
   id: string
@@ -29,12 +27,14 @@ export class PluginService {
       resolveDir: this.pluginsDir,
     })
 
+    const loadedPluginIds: string[] = []
+
     this.loader = new PluginLoader({
       pluginsDir: this.pluginsDir,
       sandbox: this.instance,
       debounceMs: 300,
-      onLoaded: (pluginId: string) => {
-        const info = this.extractPluginInfo(pluginId)
+      onLoaded: async (pluginId: string) => {
+        const info = await this.extractInfoFromSandbox(pluginId)
         if (info) this.pluginInfoMap.set(pluginId, info)
       },
       onUnloaded: (pluginId: string) => {
@@ -71,21 +71,34 @@ export class PluginService {
     }
   }
 
-  private extractPluginInfo(pluginId: string): SourcePluginMeta {
-    // Try to read source.json metadata from the plugin directory
+  private async extractInfoFromSandbox(pluginId: string): Promise<SourcePluginMeta | null> {
     try {
-      const manifestPath = path.join(this.pluginsDir, pluginId, 'source.json')
-      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
+      const info = await this.instance!.execute(pluginId, 'info', []) as Record<string, unknown>
+      if (!info || typeof info.id !== 'string') return null
       return {
-        id: manifest.id || pluginId,
-        name: manifest.name || pluginId,
-        lang: manifest.lang || 'en',
-        baseUrl: manifest.baseUrl || `https://${pluginId}.com`,
-        version: manifest.version || '1.0.0',
-        capabilities: manifest.capabilities || ['popular', 'search', 'mangaDetail', 'chapters', 'pages'],
+        id: info.id as string,
+        name: (info.name as string) || pluginId,
+        lang: (info.lang as string) || 'en',
+        baseUrl: (info.baseUrl as string) || `https://${pluginId}.com`,
+        version: (info.version as string) || '1.0.0',
+        capabilities: (Array.isArray(info.capabilities) ? info.capabilities : []) as string[],
       }
     } catch {
-      // Fallback: generate metadata from plugin ID
+      // Fallback to the plugin's info property via code evaluation
+      try {
+        const rawInfo = await this.instance!.execute(pluginId, 'getInfo', []) as Record<string, unknown>
+        if (rawInfo && typeof rawInfo.id === 'string') {
+          return {
+            id: rawInfo.id as string,
+            name: (rawInfo.name as string) || pluginId,
+            lang: (rawInfo.lang as string) || 'en',
+            baseUrl: (rawInfo.baseUrl as string) || `https://${pluginId}.com`,
+            version: (rawInfo.version as string) || '1.0.0',
+            capabilities: (Array.isArray(rawInfo.capabilities) ? rawInfo.capabilities : []) as string[],
+          }
+        }
+      } catch { /* fall through to defaults */ }
+
       return {
         id: pluginId,
         name: pluginId.charAt(0).toUpperCase() + pluginId.slice(1),

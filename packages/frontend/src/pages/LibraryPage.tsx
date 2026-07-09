@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useLibraryStore } from '../store/library-store'
-import { BookOpen, Plus, X, FolderPlus, List, LayoutGrid } from 'lucide-react'
+import { BookOpen, Plus, X, FolderPlus, List, LayoutGrid, ArrowUpDown } from 'lucide-react'
 
 export function LibraryPage() {
   const {
@@ -13,6 +13,8 @@ export function LibraryPage() {
   const [showCreateCategory, setShowCreateCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [sortBy, setSortBy] = useState<'lastRead' | 'recent' | 'title' | 'chapters'>('recent')
+  const [showSortMenu, setShowSortMenu] = useState(false)
 
   useEffect(() => {
     fetchLibrary()
@@ -22,6 +24,26 @@ export function LibraryPage() {
   const filteredEntries = activeCategoryId
     ? entries.filter(e => e.categoryIds.includes(activeCategoryId))
     : entries
+
+  const sortedEntries = useMemo(() => {
+    const list = [...filteredEntries]
+    switch (sortBy) {
+      case 'title':
+        return list.sort((a, b) => a.title.localeCompare(b.title))
+      case 'lastRead':
+        return list.sort((a, b) => {
+          if (!a.lastReadAt && !b.lastReadAt) return 0
+          if (!a.lastReadAt) return 1
+          if (!b.lastReadAt) return -1
+          return new Date(b.lastReadAt).getTime() - new Date(a.lastReadAt).getTime()
+        })
+      case 'chapters':
+        return list.sort((a, b) => (b.chaptersRead || 0) - (a.chaptersRead || 0))
+      case 'recent':
+      default:
+        return list.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
+    }
+  }, [filteredEntries, sortBy])
 
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) return
@@ -47,6 +69,38 @@ export function LibraryPage() {
           <span className="text-xs text-text-muted">{entries.length} titles</span>
         </div>
         <div className="flex items-center gap-2">
+          <div className="relative">
+            <button
+              onClick={() => setShowSortMenu(v => !v)}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-surface transition-colors"
+              title="Sort"
+            >
+              <ArrowUpDown className="w-4 h-4" strokeWidth={1.5} />
+            </button>
+            {showSortMenu && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowSortMenu(false)} />
+                <div className="absolute right-0 top-full mt-1 z-20 bg-surface border border-border-light rounded-xl shadow-lg py-1 min-w-[140px]">
+                  {[
+                    { key: 'recent', label: 'Recently Added' },
+                    { key: 'lastRead', label: 'Last Read' },
+                    { key: 'title', label: 'Title A–Z' },
+                    { key: 'chapters', label: 'Most Read' },
+                  ].map(opt => (
+                    <button
+                      key={opt.key}
+                      onClick={() => { setSortBy(opt.key as typeof sortBy); setShowSortMenu(false) }}
+                      className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                        sortBy === opt.key ? 'text-accent font-medium' : 'text-text-secondary hover:text-text hover:bg-surface-hover'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           <button
             onClick={() => setViewMode(v => v === 'grid' ? 'list' : 'grid')}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-surface transition-colors"
@@ -145,7 +199,7 @@ export function LibraryPage() {
       {/* Grid view */}
       {viewMode === 'grid' && filteredEntries.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-          {filteredEntries.map(entry => (
+          {sortedEntries.map(entry => (
             <div key={entry.id} className="group relative">
               <Link
                 to={`/sources/${entry.sourceId}/manga/${encodeURIComponent(entry.mangaId)}`}
@@ -189,7 +243,7 @@ export function LibraryPage() {
       {/* List view */}
       {viewMode === 'list' && filteredEntries.length > 0 && (
         <div className="space-y-0.5">
-          {filteredEntries.map(entry => (
+          {sortedEntries.map(entry => (
             <div key={entry.id} className="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface transition-colors">
               <Link
                 to={`/sources/${entry.sourceId}/manga/${encodeURIComponent(entry.mangaId)}`}
@@ -198,11 +252,26 @@ export function LibraryPage() {
                 <div className="w-10 h-14 shrink-0 rounded-md overflow-hidden bg-surface">
                   <img src={entry.coverUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-text truncate">{entry.title}</p>
-                  <p className="text-[10px] text-text-muted mt-0.5">
-                    Ch. {entry.chaptersRead}{entry.totalChapters ? ` / ${entry.totalChapters}` : ''}
-                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] text-text-muted">
+                      Ch. {entry.chaptersRead}{entry.totalChapters ? ` / ${entry.totalChapters}` : ''}
+                    </span>
+                    {entry.lastReadAt && (
+                      <span className="text-[9px] text-text-muted/50">
+                        {new Date(entry.lastReadAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </span>
+                    )}
+                  </div>
+                  {entry.chaptersRead > 0 && entry.totalChapters && (
+                    <div className="mt-1 h-1 rounded-full bg-surface overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-accent transition-all"
+                        style={{ width: `${Math.round((entry.chaptersRead / entry.totalChapters) * 100)}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
               </Link>
               <button

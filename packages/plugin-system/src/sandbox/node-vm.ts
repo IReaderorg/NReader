@@ -67,8 +67,13 @@ class NodeVmInstance implements SandboxInstance {
     const execCode = `
       (function() {
         var plugin = module.exports.default || module.exports;
-        var args = ${JSON.stringify(args)};
-        return plugin['${method}'].apply(plugin, args);
+        var val = plugin['${method}'];
+        if (typeof val === 'function') {
+          var args = ${JSON.stringify(args)};
+          return val.apply(plugin, args);
+        }
+        // Property access (e.g. plugin.info → returns the object)
+        return val;
       })()
     `
 
@@ -81,6 +86,9 @@ class NodeVmInstance implements SandboxInstance {
     // references to fetch/parseHTML/setTimeout still work
     const contextWithMethods = vm.createContext({
       ...ctx.sandbox,
+      fetch: async (url: string, opts?: RequestInit) => {
+        return globalThis.fetch(url, opts)
+      },
       parseHTML,
       setTimeout: (fn: () => void, ms: number) => setTimeout(fn, Math.min(ms, 30_000)),
     })
@@ -106,6 +114,7 @@ class NodeVmInstance implements SandboxInstance {
         warn: (...args: unknown[]) => console.warn(`[plugin:${pluginId}]`, ...args),
         error: (...args: unknown[]) => console.error(`[plugin:${pluginId}]`, ...args),
       },
+      fetch: async (url: string, opts?: RequestInit) => globalThis.fetch(url, opts),
       setTimeout: (fn: () => void, ms: number) => setTimeout(fn, Math.min(ms, 30_000)),
       clearTimeout,
       JSON, Math, Date, RegExp, Array, Object, String, Number, Boolean, Map, Set, Promise,

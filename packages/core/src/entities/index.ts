@@ -131,6 +131,55 @@ export interface PluginMeta {
   code?: string
   enabled: boolean
   installedAt: string
+  config?: Record<string, unknown>
+}
+
+// Extended plugin interfaces
+export interface ThemePlugin {
+  info: { id: string; name: string; version: string; type: 'theme' }
+  getCSS(): Promise<string>
+  getMetadata(): Promise<{ name: string; description: string; accentColor?: string; bgColor?: string }>
+}
+
+export interface AIPlugin {
+  info: { id: string; name: string; version: string; type: 'ai' }
+  summarize(text: string, lang?: string): Promise<string>
+  generate(prompt: string, context?: string): Promise<string>
+  translate(text: string, targetLang: string, sourceLang?: string): Promise<string>
+}
+
+export interface SyncPlugin {
+  info: { id: string; name: string; version: string; type: 'sync' }
+  push(data: BackupPayload): Promise<void>
+  pull(): Promise<BackupPayload>
+  testConnection(): Promise<boolean>
+}
+
+export interface MarketplacePlugin {
+  id: string
+  name: string
+  description: string
+  type: 'source' | 'theme' | 'ai' | 'sync' | 'image'
+  version: string
+  author: string
+  installUrl: string
+  downloads: number
+  rating: number
+  updatedAt: string
+}
+
+export interface BackupPayload {
+  version: string
+  schemaVersion: number
+  exportedAt: string
+  library: LibraryEntry[]
+  categories: Category[]
+  history: HistoryEntry[]
+  settings: Setting[]
+  downloads: DownloadJob[]
+  glossary: GlossaryEntry[]
+  plugins: PluginMeta[]
+  covers?: Record<string, string> // mangaId → base64
 }
 
 // API error response

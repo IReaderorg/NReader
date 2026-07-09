@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSettingsStore } from '../store/settings-store'
 import { api } from '../api/client'
-import { Palette, Monitor, BookOpen, Sun, Moon, Droplet, Puzzle, Download, Volume2, Languages } from 'lucide-react'
+import { Palette, Monitor, BookOpen, Sun, Moon, Droplet, Puzzle, Download, Volume2, Languages, HardDrive } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export function SettingsPage() {
@@ -177,6 +177,19 @@ export function SettingsPage() {
             <div>
               <p className="text-sm font-medium text-text">Sources</p>
               <p className="text-xs text-text-secondary">Manage installed source plugins</p>
+            </div>
+          </Link>
+
+          <Link
+            to="/backup"
+            className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-border-light hover:bg-surface-hover transition-colors"
+          >
+            <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
+              <HardDrive className="w-4 h-4 text-accent" strokeWidth={1.5} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-text">Backup & Restore</p>
+              <p className="text-xs text-text-secondary">Export or import your library and settings</p>
             </div>
           </Link>
         </div>

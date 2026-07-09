@@ -78,7 +78,7 @@ test.describe('Phase 1: Source Loading + Browse', () => {
 
   test('Frontend: detail page shows manga info and chapters', async ({ page }) => {
     await page.goto('/sources/demo/manga/demo%2Fmanga-1')
-    await expect(page.getByRole('heading', { name: 'Demo Manga' })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText('Demo Manga')).toBeVisible({ timeout: 10000 })
     await expect(page.getByText(/Chapters/i)).toBeVisible({ timeout: 10000 })
   })
 

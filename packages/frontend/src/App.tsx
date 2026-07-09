@@ -15,6 +15,8 @@ import { SettingsPage } from './pages/SettingsPage'
 import { TtsSettingsPage } from './pages/TtsSettingsPage'
 import { TranslationSettingsPage } from './pages/TranslationSettingsPage'
 import { MorePage } from './pages/MorePage'
+import { BackupPage } from './pages/BackupPage'
+import { PluginManagerPage } from './pages/PluginManagerPage'
 
 export function App() {
   return (
@@ -36,6 +38,8 @@ export function App() {
             <Route path="/settings/tts" element={<TtsSettingsPage />} />
             <Route path="/settings/translation" element={<TranslationSettingsPage />} />
             <Route path="/more" element={<MorePage />} />
+            <Route path="/backup" element={<BackupPage />} />
+            <Route path="/plugins" element={<PluginManagerPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

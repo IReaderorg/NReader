@@ -18,9 +18,10 @@ interface WebtoonReaderProps {
   initialPage?: number
   onPageChange?: (page: number, scrollPos: number) => void
   className?: string
+  initialScrollPos?: number
 }
 
-export function WebtoonReader({ pages, initialPage = 0, onPageChange, className }: WebtoonReaderProps) {
+export function WebtoonReader({ pages, initialPage = 0, onPageChange, className, initialScrollPos }: WebtoonReaderProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [visiblePage, setVisiblePage] = useState(initialPage)
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([initialPage]))
@@ -28,10 +29,12 @@ export function WebtoonReader({ pages, initialPage = 0, onPageChange, className 
 
   // Scroll to initial page on mount
   useEffect(() => {
-    if (initialPage > 0 && pageRefs.current[initialPage]) {
+    if (initialScrollPos && scrollRef.current) {
+      scrollRef.current.scrollTop = initialScrollPos
+    } else if (initialPage > 0 && pageRefs.current[initialPage]) {
       pageRefs.current[initialPage]?.scrollIntoView({ behavior: 'instant', block: 'start' })
     }
-  }, [initialPage])
+  }, [initialPage, initialScrollPos])
 
   // IntersectionObserver for lazy loading + tracking visible page
   useEffect(() => {

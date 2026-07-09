@@ -1,0 +1,149 @@
+// Source plugin info
+export interface SourceInfo {
+  id: string
+  name: string
+  lang: string
+  baseUrl: string
+  version: string
+  icon?: string
+  capabilities: ('popular' | 'search' | 'latest' | 'mangaDetail' | 'chapters' | 'pages')[]
+}
+
+// Plugin interface (used by plugin-system)
+export interface SourcePlugin {
+  info: SourceInfo
+  popular(page: number): Promise<MangaSummary[]>
+  search(query: string, page: number): Promise<MangaSummary[]>
+  latest?(page: number): Promise<MangaSummary[]>
+  mangaDetail(id: string): Promise<MangaDetail>
+  chapters(mangaId: string): Promise<Chapter[]>
+  pages(chapterId: string): Promise<Page[]>
+  initialize?(): Promise<void>
+  destroy?(): Promise<void>
+}
+
+// Data shapes
+export interface MangaSummary {
+  id: string
+  title: string
+  coverUrl: string
+  url?: string
+  author?: string
+  status?: 'ongoing' | 'completed' | 'hiatus' | 'cancelled'
+  rating?: number
+  lastUpdated?: string
+}
+
+export interface MangaDetail extends MangaSummary {
+  description: string
+  genres: string[]
+  chapters: Chapter[]
+  altTitles?: string[]
+}
+
+export interface Chapter {
+  id: string
+  number: number
+  title: string
+  url?: string
+  volume?: number
+  date?: string
+  read: boolean
+  downloaded: boolean
+}
+
+export interface Page {
+  index: number
+  url: string
+  width?: number
+  height?: number
+}
+
+// Library entry (persisted in SQLite)
+export interface LibraryEntry {
+  id: string
+  sourceId: string
+  mangaId: string
+  title: string
+  coverUrl: string
+  author?: string
+  status?: string
+  rating?: number
+  genres?: string[]
+  description?: string
+  lastReadAt?: string
+  chaptersRead: number
+  totalChapters?: number
+  score?: number
+  dateAdded: string
+  dateUpdated?: string
+  categoryIds: string[]
+}
+
+export interface Category {
+  id: string
+  name: string
+  sortOrder: number
+  color?: string
+}
+
+// History
+export interface HistoryEntry {
+  id: string
+  mangaId: string
+  sourceId: string
+  chapterId: string
+  chapterNumber: number
+  chapterTitle?: string
+  page: number
+  scrollPosition: number
+  readAt: string
+}
+
+// Settings
+export interface Setting {
+  key: string
+  value: unknown
+}
+
+// Download
+export interface DownloadJob {
+  id: string
+  sourceId: string
+  mangaId: string
+  chapterId: string
+  chapterNumber: number
+  status: 'queued' | 'downloading' | 'completed' | 'failed' | 'cancelled'
+  progress: number
+  bytesDownloaded: number
+  totalBytes?: number
+  error?: string
+  createdAt: string
+  completedAt?: string
+}
+
+// Plugin metadata
+export interface PluginMeta {
+  id: string
+  type: 'source' | 'theme' | 'ai' | 'sync' | 'image'
+  name: string
+  version?: string
+  code?: string
+  enabled: boolean
+  installedAt: string
+}
+
+// API error response
+export interface ApiError {
+  error: string
+  code: string
+  status: number
+  details?: Record<string, unknown>
+}
+
+// WebSocket message
+export interface WsMessage {
+  channel: string
+  event: string
+  data: unknown
+}

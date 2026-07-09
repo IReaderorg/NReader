@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "paths": {
+      "@ireader/core": ["./packages/core/src"],
+      "@ireader/core/*": ["./packages/core/src/*"],
+      "@ireader/storage": ["./packages/storage/src"],
+      "@ireader/storage/*": ["./packages/storage/src/*"],
+      "@ireader/backend": ["./packages/backend/src"],
+      "@ireader/backend/*": ["./packages/backend/src/*"],
+      "@ireader/plugin-system": ["./packages/plugin-system/src"],
+      "@ireader/plugin-system/*": ["./packages/plugin-system/src/*"],
+      "@ireader/frontend": ["./packages/frontend/src"],
+      "@ireader/frontend/*": ["./packages/frontend/src/*"]
+    }
+  },
+  "include": ["packages/*/src"],
+  "exclude": ["node_modules", "dist"]
+}

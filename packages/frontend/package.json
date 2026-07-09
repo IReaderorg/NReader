@@ -11,6 +11,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ireader/reader-engine": "workspace:*",
+    "@ireader/core": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.0.0",

@@ -9,6 +9,7 @@ import { MangaDetailPage } from './pages/MangaDetailPage'
 import { LibraryPage } from './pages/LibraryPage'
 import { UpdatesPage } from './pages/UpdatesPage'
 import { HistoryPage } from './pages/HistoryPage'
+import { ReaderPage } from './pages/ReaderPage'
 import { MorePage } from './pages/MorePage'
 
 export function App() {
@@ -25,6 +26,7 @@ export function App() {
             <Route path="/sources/:sourceId/manga/:mangaId" element={<MangaDetailPage />} />
             <Route path="/updates" element={<UpdatesPage />} />
             <Route path="/history" element={<HistoryPage />} />
+            <Route path="/reader/:sourceId/:mangaId/:chapterId" element={<ReaderPage />} />
             <Route path="/more" element={<MorePage />} />
           </Route>
         </Routes>

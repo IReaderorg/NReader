@@ -28,6 +28,8 @@
       "@ireader/backend/*": ["./packages/backend/src/*"],
       "@ireader/plugin-system": ["./packages/plugin-system/src"],
       "@ireader/plugin-system/*": ["./packages/plugin-system/src/*"],
+      "@ireader/reader-engine": ["./packages/reader-engine/src"],
+      "@ireader/reader-engine/*": ["./packages/reader-engine/src/*"],
       "@ireader/frontend": ["./packages/frontend/src"],
       "@ireader/frontend/*": ["./packages/frontend/src/*"]
     }

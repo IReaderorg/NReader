@@ -91,6 +91,12 @@ importers:
 
   packages/frontend:
     dependencies:
+      '@ireader/core':
+        specifier: workspace:*
+        version: link:../core
+      '@ireader/reader-engine':
+        specifier: workspace:*
+        version: link:../reader-engine
       '@radix-ui/react-dropdown-menu':
         specifier: ^2.0.0
         version: 2.1.20(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -177,6 +183,21 @@ importers:
       '@ireader/core':
         specifier: workspace:*
         version: link:../core
+      clsx:
+        specifier: ^2.0.0
+        version: 2.1.1
+      lucide-react:
+        specifier: ^0.460.0
+        version: 0.460.0(react@19.2.7)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+      tailwind-merge:
+        specifier: ^2.0.0
+        version: 2.6.1
     devDependencies:
       typescript:
         specifier: ^5.5.0

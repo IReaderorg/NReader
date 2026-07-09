@@ -23,6 +23,24 @@ export interface SourceInfo {
   version: string; capabilities: string[]
 }
 
+export interface LibraryEntry {
+  id: string; sourceId: string; mangaId: string; title: string
+  coverUrl: string; author?: string; status?: string; rating?: number
+  genres: string[]; description?: string; lastReadAt?: string
+  chaptersRead: number; totalChapters?: number; score?: number
+  dateAdded: string; categoryIds: string[]
+}
+
+export interface Category {
+  id: string; name: string; sortOrder: number; color?: string
+}
+
+export interface HistoryEntry {
+  id: string; mangaId: string; sourceId: string; chapterId: string
+  chapterNumber: number; chapterTitle?: string; page: number
+  scrollPosition: number; readAt: string
+}
+
 export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     headers: { 'Content-Type': 'application/json' },
@@ -40,6 +58,7 @@ function enc(v: string): string {
 }
 
 export const api = {
+  // Sources
   getSources: () => apiFetch<SourceInfo[]>('/sources'),
   getSource: (id: string) => apiFetch<SourceInfo>(`/sources/${id}`),
   getPopular: (id: string, page = 1) => apiFetch<MangaSummary[]>(`/sources/${id}/popular?page=${page}`),
@@ -47,4 +66,32 @@ export const api = {
   getDetail: (id: string, mangaId: string) => apiFetch<MangaDetail>(`/sources/${id}/detail/${enc(mangaId)}`),
   getChapters: (id: string, mangaId: string) => apiFetch<Chapter[]>(`/sources/${id}/chapters/${enc(mangaId)}`),
   getPages: (id: string, chapterId: string) => apiFetch<Page[]>(`/sources/${id}/pages/${enc(chapterId)}`),
+
+  // Library
+  getLibrary: () => apiFetch<LibraryEntry[]>('/library'),
+  getLibraryEntry: (id: string) => apiFetch<LibraryEntry>(`/library/${id}`),
+  addToLibrary: (entry: {
+    sourceId: string; mangaId: string; title: string; coverUrl?: string
+    author?: string; status?: string; genres?: string[]; description?: string
+    totalChapters?: number; categoryId?: string
+  }) => apiFetch<LibraryEntry>('/library', { method: 'POST', body: JSON.stringify(entry) }),
+  updateLibraryEntry: (id: string, data: Partial<LibraryEntry>) =>
+    apiFetch<LibraryEntry>(`/library/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  removeFromLibrary: (id: string) => apiFetch<{ success: boolean }>(`/library/${id}`, { method: 'DELETE' }),
+
+  // Categories
+  getCategories: () => apiFetch<Category[]>('/library/categories'),
+  createCategory: (name: string, color?: string) =>
+    apiFetch<Category>('/library/categories', { method: 'POST', body: JSON.stringify({ name, color }) }),
+  deleteCategory: (id: string) =>
+    apiFetch<{ success: boolean }>(`/library/categories/${id}`, { method: 'DELETE' }),
+
+  // History
+  getHistory: (mangaId?: string) => apiFetch<HistoryEntry[]>(`/history${mangaId ? `?mangaId=${enc(mangaId)}` : ''}`),
+  recordHistory: (entry: {
+    mangaId: string; sourceId: string; chapterId: string; chapterNumber: number
+    chapterTitle?: string; page: number; scrollPosition: number
+  }) => apiFetch<HistoryEntry>('/history', { method: 'POST', body: JSON.stringify(entry) }),
+  deleteHistory: (mangaId: string) =>
+    apiFetch<{ success: boolean }>(`/history/${enc(mangaId)}`, { method: 'DELETE' }),
 }

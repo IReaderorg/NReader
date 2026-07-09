@@ -122,6 +122,10 @@ export const api = {
     apiFetch<DownloadJob>('/downloads', { method: 'POST', body: JSON.stringify(entry) }),
   cancelDownload: (id: string) =>
     apiFetch<{ success: boolean }>(`/downloads/${id}/cancel`, { method: 'POST' }),
+  retryDownload: (id: string) =>
+    apiFetch<DownloadJob>(`/downloads/${id}/retry`, { method: 'POST' }),
+  clearCompletedDownloads: () =>
+    apiFetch<{ success: boolean }>('/downloads/clear-completed', { method: 'POST' }),
   deleteDownload: (id: string) =>
     apiFetch<{ success: boolean }>(`/downloads/${id}`, { method: 'DELETE' }),
 
@@ -167,6 +171,16 @@ export const api = {
     apiFetch<{ success: boolean }>(`/reader/themes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteTheme: (id: string) =>
     apiFetch<{ success: boolean }>(`/reader/themes/${id}`, { method: 'DELETE' }),
+
+  // Bookmarks
+  toggleBookmark: (chapterId: string) =>
+    apiFetch<{ bookmarked: boolean }>('/bookmarks/toggle', { method: 'POST', body: JSON.stringify({ chapterId }) }),
+  getBookmarkStatus: (chapterId: string) =>
+    apiFetch<{ bookmarked: boolean }>(`/bookmarks/status/${encodeURIComponent(chapterId)}`),
+
+  // Reports
+  reportChapter: (data: { sourceId: string; chapterId: string; chapterName?: string; category: string; description?: string }) =>
+    apiFetch<{ success: boolean; reportId: string }>('/reports', { method: 'POST', body: JSON.stringify(data) }),
 
   // Fonts
   getFonts: () => apiFetch<Array<{ id: string; name: string; fileName: string; fileSize: number; format: string; uploadedAt: string }>>('/fonts'),

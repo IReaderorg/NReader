@@ -3,8 +3,8 @@ import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import {
   X, Sun, Moon, Minus, Plus, BookOpen, Layout, AlignLeft,
-  Type, AlignCenter, AlignRight, AlignJustify, Play, Square,
-  Palette, Filter, GripVertical
+  AlignCenter, AlignRight, AlignJustify, Play, Square,
+  GripVertical
 } from 'lucide-react'
 
 function cn(...inputs: (string | undefined | null | false)[]): string {
@@ -135,7 +135,7 @@ export function ReaderOverlay({
         <div className="flex items-center gap-1">
           {/* Layout toggle */}
           <button
-            onClick={() => setShowLayout(v => !v)}
+            onClick={() => setShowLayout((v: boolean) => !v)}
             className={cn(
               'w-10 h-10 flex items-center justify-center rounded-lg transition-colors',
               showLayout ? 'bg-accent/20 text-accent' : 'text-text-secondary hover:bg-white/10'

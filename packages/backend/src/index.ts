@@ -9,9 +9,13 @@ import { createSettingsRouter } from './api/settings.js'
 import { createDownloadsRouter } from './api/downloads.js'
 import { createGlossaryRouter } from './api/glossary.js'
 import { createBackupRouter } from './api/backup.js'
+import { createAutoBackupRouter } from './api/auto-backup.js'
 import { createReaderThemesRouter } from './api/reader-themes.js'
 import { createFontsRouter } from './api/fonts.js'
+import { createReportRouter } from './api/report.js'
+import { createBookmarkRouter } from './api/bookmarks.js'
 import { BackupService } from './backup/backup-service.js'
+import { AutoBackupScheduler } from './backup/auto-backup-scheduler.js'
 import { proxyApp } from './api/proxy.js'
 import { NodeVmSandbox } from '@ireader/plugin-system'
 import { PluginService } from './plugins/plugin-service.js'
@@ -81,12 +85,22 @@ export async function startApp(): Promise<Hono> {
   app.route('/api/v1/glossary', createGlossaryRouter(glossaryRepo))
   app.route('/api/v1/backup', createBackupRouter(backupService))
 
+  // Auto-backup scheduler
+  const autoBackupScheduler = new AutoBackupScheduler(backupService)
+  app.route('/api/v1/auto-backup', createAutoBackupRouter(autoBackupScheduler))
+
   // Reader themes
   const settingsRepoForThemes = settingsRepo
   app.route('/api/v1/reader/themes', createReaderThemesRouter(settingsRepoForThemes))
 
   // Custom fonts
   app.route('/api/v1/fonts', createFontsRouter(settingsRepo))
+
+  // Reports
+  app.route('/api/v1/reports', createReportRouter())
+
+  // Bookmarks
+  app.route('/api/v1/bookmarks', createBookmarkRouter())
 
   // Plugin list endpoint — returns mock data when no real plugins loaded
   app.get('/api/v1/plugins', (c) => {

@@ -40,9 +40,9 @@ export const useTranslationStore = create<TranslationStore>((set) => ({
   addGlossaryEntry: async (entry) => {
     const store = useTranslationStore.getState()
     await api.addGlossaryEntry({
-      sourceLang: entry.sourceLang || store.sourceLang,
       targetLang: store.targetLang,
-      ...entry
+      ...entry,
+      sourceLang: entry.sourceLang || store.sourceLang,
     })
     store.loadGlossary()
   },

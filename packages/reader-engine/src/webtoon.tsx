@@ -55,7 +55,7 @@ export function WebtoonReader({ pages, initialPage = 0, onPageChange, className,
           }
           // Lazy load: mark as visible
           if (entry.isIntersecting) {
-            setLoadedImages(prev => {
+              setLoadedImages((prev: Set<number>) => {
               if (prev.has(idx)) return prev
               const next = new Set(prev)
               next.add(idx)
@@ -64,7 +64,7 @@ export function WebtoonReader({ pages, initialPage = 0, onPageChange, className,
             // Preload next image
             const nextIdx = idx + 1
             if (nextIdx < pages.length) {
-              setLoadedImages(prev => {
+            setLoadedImages((prev: Set<number>) => {
                 if (prev.has(nextIdx)) return prev
                 const next = new Set(prev)
                 next.add(nextIdx)

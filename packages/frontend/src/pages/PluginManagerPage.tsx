@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
-import { Puzzle, Download, ExternalLink, CheckCircle, XCircle, ArrowLeft, Star } from 'lucide-react'
+import { Puzzle, Download, ArrowLeft, Star } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 interface MarketplaceItem {

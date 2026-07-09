@@ -54,7 +54,7 @@ interface LibraryStore {
   deleteCategory: (id: string) => Promise<void>
 }
 
-export const useLibraryStore = create<LibraryStore>((set, get) => ({
+export const useLibraryStore = create<LibraryStore>((set) => ({
   entries: [],
   categories: [],
   activeCategoryId: null,

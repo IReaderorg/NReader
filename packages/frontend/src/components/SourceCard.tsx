@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Globe, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 
 interface SourceCardProps {
   id: string

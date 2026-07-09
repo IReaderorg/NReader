@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { ThemeToggle } from './ThemeToggle'
 import { Sidebar } from './Sidebar'
 import { MobileNav } from './MobileNav'
@@ -19,7 +19,8 @@ export function Layout() {
       if (segs[2] === 'search') return 'Search'
       return segs[1]
     }
-    return segs[0]?.charAt(0).toUpperCase() + segs[0]?.slice(1) || 'IReader'
+    const first = segs[0]
+    return first ? first.charAt(0).toUpperCase() + first.slice(1) : 'IReader'
   })()
 
   return (
@@ -47,7 +48,7 @@ export function Layout() {
         </header>
 
         {/* Page content */}
-        <main className="app-content">
+        <main id="main-content" className="app-content" role="main">
           <Outlet />
         </main>
       </div>

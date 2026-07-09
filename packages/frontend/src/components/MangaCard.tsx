@@ -8,7 +8,7 @@ interface MangaCardProps {
   sourceId: string
 }
 
-export function MangaCard({ id, title, coverUrl, author, sourceId }: MangaCardProps) {
+export function MangaCard({ id, title, coverUrl, author: _author, sourceId }: MangaCardProps) {
   return (
     <Link
       to={`/sources/${sourceId}/manga/${encodeURIComponent(id)}`}

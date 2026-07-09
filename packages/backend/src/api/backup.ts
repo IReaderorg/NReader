@@ -7,13 +7,13 @@ export function createBackupRouter(backupService: BackupService): Hono {
   // Export backup
   app.post('/export', async (c) => {
     try {
-      const body = await c.req.json<{ includeCovers?: boolean }>().catch(() => ({}))
+      const body = await c.req.json().catch(() => ({})) as { includeCovers?: boolean }
       const includeCovers = body.includeCovers ?? false
       const zipData = await backupService.exportBackup(includeCovers)
 
       c.header('Content-Type', 'application/zip')
       c.header('Content-Disposition', `attachment; filename="ireader-backup-${Date.now()}.zip"`)
-      return c.body(zipData)
+      return c.body(zipData as any)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Export failed'
       return c.json({ error: msg, code: 'BACKUP_ERROR', status: 500 }, 500)

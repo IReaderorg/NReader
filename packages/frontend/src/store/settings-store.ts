@@ -16,7 +16,7 @@ interface SettingsStore {
 
 const DEFAULT_ACCENT = '38 92% 50%'
 
-export const useSettingsStore = create<SettingsStore>((set, get) => ({
+export const useSettingsStore = create<SettingsStore>((set) => ({
   theme: 'dark',
   accentColor: DEFAULT_ACCENT,
   loading: false,

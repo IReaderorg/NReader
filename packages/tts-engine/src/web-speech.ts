@@ -12,7 +12,6 @@ export class WebSpeechEngine implements TtsEngine {
   private handlers = new Set<StateHandler>()
   private _speed: number = 1
   private _voice: string | null = null
-  private currentChunk = ''
   private charIndex = 0
 
   constructor(config?: Partial<TtsEngineConfig>) {
@@ -28,12 +27,11 @@ export class WebSpeechEngine implements TtsEngine {
     this.handlers.forEach(h => h(s))
   }
 
-  on(event: 'statechange', handler: StateHandler) { this.handlers.add(handler) }
-  off(event: 'statechange', handler: StateHandler) { this.handlers.delete(handler) }
+  on(_event: 'statechange', handler: StateHandler) { this.handlers.add(handler) }
+  off(_event: 'statechange', handler: StateHandler) { this.handlers.delete(handler) }
 
   async speak(text: string, onProgress?: (char: number, total: number) => void): Promise<void> {
     this.stop()
-    this.currentChunk = text
     this.charIndex = 0
 
     return new Promise((resolve) => {

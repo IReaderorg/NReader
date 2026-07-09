@@ -55,6 +55,18 @@ interface ReaderStore {
   contentFilterPatterns: string
   /** Color filter (persisted) */
   colorFilter: ColorFilterType
+  /** General display toggles (persisted) */
+  immersiveMode: boolean
+  showScrollbar: boolean
+  showReadingTime: boolean
+  volumeNavigation: boolean
+  screenAwake: boolean
+  bionicReading: boolean
+  webviewBg: boolean
+  selectableMode: boolean
+  reducedAnimations: boolean
+  /** Bookmark state */
+  isBookmarked: boolean
   /** Session-only */
   brightness: number
   currentPage: number
@@ -84,6 +96,18 @@ interface ReaderStore {
   setContentFilterPatterns: (patterns: string) => void
   /** Color filter */
   setColorFilter: (filter: ColorFilterType) => void
+  /** General display toggles */
+  setImmersiveMode: (v: boolean) => void
+  setShowScrollbar: (v: boolean) => void
+  setShowReadingTime: (v: boolean) => void
+  setVolumeNavigation: (v: boolean) => void
+  setScreenAwake: (v: boolean) => void
+  setBionicReading: (v: boolean) => void
+  setWebviewBg: (v: boolean) => void
+  setSelectableMode: (v: boolean) => void
+  setReducedAnimations: (v: boolean) => void
+  /** Bookmark */
+  setBookmarked: (v: boolean) => void
 }
 
 const DEFAULT_CONTENT_FILTER_PATTERNS = [
@@ -114,6 +138,16 @@ export const useReaderStore = create<ReaderStore>()(
       contentFilterEnabled: false,
       contentFilterPatterns: DEFAULT_CONTENT_FILTER_PATTERNS,
       colorFilter: 'none',
+      immersiveMode: false,
+      showScrollbar: true,
+      showReadingTime: true,
+      volumeNavigation: false,
+      screenAwake: false,
+      bionicReading: false,
+      webviewBg: false,
+      selectableMode: false,
+      reducedAnimations: false,
+      isBookmarked: false,
       brightness: 100,
       currentPage: 0,
       totalPages: 0,
@@ -154,6 +188,16 @@ export const useReaderStore = create<ReaderStore>()(
       setContentFilterEnabled: (enabled) => set({ contentFilterEnabled: enabled }),
       setContentFilterPatterns: (patterns) => set({ contentFilterPatterns: patterns }),
       setColorFilter: (filter) => set({ colorFilter: filter }),
+      setImmersiveMode: (v) => set({ immersiveMode: v }),
+      setShowScrollbar: (v) => set({ showScrollbar: v }),
+      setShowReadingTime: (v) => set({ showReadingTime: v }),
+      setVolumeNavigation: (v) => set({ volumeNavigation: v }),
+      setScreenAwake: (v) => set({ screenAwake: v }),
+      setBionicReading: (v) => set({ bionicReading: v }),
+      setWebviewBg: (v) => set({ webviewBg: v }),
+      setSelectableMode: (v) => set({ selectableMode: v }),
+      setReducedAnimations: (v) => set({ reducedAnimations: v }),
+      setBookmarked: (v) => set({ isBookmarked: v }),
     }),
     {
       name: 'nreader-reader-store',
@@ -171,6 +215,15 @@ export const useReaderStore = create<ReaderStore>()(
         contentFilterEnabled: state.contentFilterEnabled,
         contentFilterPatterns: state.contentFilterPatterns,
         colorFilter: state.colorFilter,
+        immersiveMode: state.immersiveMode,
+        showScrollbar: state.showScrollbar,
+        showReadingTime: state.showReadingTime,
+        volumeNavigation: state.volumeNavigation,
+        screenAwake: state.screenAwake,
+        bionicReading: state.bionicReading,
+        webviewBg: state.webviewBg,
+        selectableMode: state.selectableMode,
+        reducedAnimations: state.reducedAnimations,
       }),
     }
   )

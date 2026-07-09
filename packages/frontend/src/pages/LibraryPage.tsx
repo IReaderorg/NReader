@@ -1,13 +1,13 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useLibraryStore } from '../store/library-store'
-import { BookOpen, Plus, X, FolderPlus, List, LayoutGrid, ArrowUpDown } from 'lucide-react'
+import { BookOpen, Plus, X, List, LayoutGrid, ArrowUpDown } from 'lucide-react'
 
 export function LibraryPage() {
   const {
     entries, categories, activeCategoryId, loading, error,
     fetchLibrary, fetchCategories, removeFromLibrary,
-    setActiveCategory, createCategory, deleteCategory,
+    setActiveCategory, createCategory,
   } = useLibraryStore()
 
   const [showCreateCategory, setShowCreateCategory] = useState(false)

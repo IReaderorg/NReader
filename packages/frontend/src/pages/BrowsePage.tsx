@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { api, type MangaSummary } from '../api/client'
 import { MangaCard } from '../components/MangaCard'
-import { ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
+import { LoadingState, ErrorState, EmptyState } from '../components/SharedStates'
+import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
 
 export function BrowsePage() {
   const { sourceId } = useParams<{ sourceId: string }>()
@@ -11,7 +12,7 @@ export function BrowsePage() {
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
 
-  useEffect(() => {
+  const load = () => {
     if (!sourceId) return
     setLoading(true)
     setError(null)
@@ -19,11 +20,19 @@ export function BrowsePage() {
       .then(setManga)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [sourceId, page])
+  }
 
-  if (loading) return <SkeletonGrid />
-  if (error) return <ErrorState message={error} onRetry={() => setPage(p => p)} />
-  if (manga.length === 0) return <EmptyState />
+  useEffect(() => { load() }, [sourceId, page]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (loading) return <LoadingState message="Loading manga…" />
+  if (error) return <ErrorState message={error} onRetry={load} />
+  if (manga.length === 0) return (
+    <EmptyState
+      icon={<BookOpen className="w-10 h-10 text-text-muted/40" strokeWidth={1} />}
+      title="No manga found"
+      description="Try searching for something else or check back later."
+    />
+  )
 
   return (
     <div>
@@ -63,35 +72,4 @@ export function BrowsePage() {
   )
 }
 
-function SkeletonGrid() {
-  return (
-    <div className="grid grid-cols-3 gap-2 md:gap-3">
-      {Array.from({ length: 9 }).map((_, i) => (
-        <div key={i} className="animate-pulse">
-          <div className="aspect-[3/4] bg-surface rounded-lg ring-1 ring-border-light/50" />
-          <div className="h-3 bg-surface rounded mt-1.5 w-3/4" />
-        </div>
-      ))}
-    </div>
-  )
-}
 
-function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16">
-      <AlertCircle className="w-9 h-9 text-danger mb-3" strokeWidth={1.5} />
-      <p className="text-sm text-danger mb-4 text-center">{message}</p>
-      <button onClick={onRetry} className="px-4 py-2 bg-accent text-black rounded-lg text-sm font-semibold hover:opacity-90">
-        Retry
-      </button>
-    </div>
-  )
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center py-16">
-      <p className="text-sm text-text-secondary">No manga found</p>
-    </div>
-  )
-}

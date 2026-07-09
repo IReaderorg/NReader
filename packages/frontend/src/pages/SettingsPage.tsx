@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useSettingsStore } from '../store/settings-store'
-import { api } from '../api/client'
 import { Palette, Monitor, BookOpen, Sun, Moon, Droplet, Puzzle, Download, Volume2, Languages, HardDrive } from 'lucide-react'
 import { Link } from 'react-router-dom'
 

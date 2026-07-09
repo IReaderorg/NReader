@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import type { TtsEngine, TtsState, TtsVoice, TtsEngineType } from '@ireader/tts-engine'
 import { WebSpeechEngine } from '@ireader/tts-engine'
-import { api } from '../api/client'
 
 interface TtsStore {
   engine: TtsEngine | null

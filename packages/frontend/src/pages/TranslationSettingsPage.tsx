@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslationStore } from '../store/translation-store'
-import { ArrowLeft, Plus, Trash2, Search, Languages, BookOpen } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Languages, BookOpen } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export function TranslationSettingsPage() {

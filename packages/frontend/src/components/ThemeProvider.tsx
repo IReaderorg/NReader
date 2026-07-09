@@ -46,7 +46,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     <ThemeContext.Provider value={{ theme, setTheme, accentColor, setAccentColor, toggle: () => {
       const cycle: ThemeMode[] = ['dark', 'light', 'amoled']
       const idx = cycle.indexOf(theme)
-      setTheme(cycle[(idx + 1) % cycle.length])
+      setTheme(cycle[(idx + 1) % cycle.length] ?? 'dark')
     } }}>
       {children}
     </ThemeContext.Provider>

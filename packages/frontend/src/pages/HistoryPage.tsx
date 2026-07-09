@@ -129,7 +129,7 @@ function formatTimeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-function groupByDate(entries: { readAt: string }[]): Record<string, typeof entries> {
+function groupByDate<T extends { readAt: string }>(entries: T[]): Record<string, T[]> {
   const groups: Record<string, typeof entries> = {}
   const today = new Date().toDateString()
   const yesterday = new Date(Date.now() - 86400000).toDateString()
@@ -142,7 +142,7 @@ function groupByDate(entries: { readAt: string }[]): Record<string, typeof entri
     else label = new Date(entry.readAt).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
 
     if (!groups[label]) groups[label] = []
-    groups[label].push(entry)
+    groups[label]!.push(entry)
   }
   return groups
 }

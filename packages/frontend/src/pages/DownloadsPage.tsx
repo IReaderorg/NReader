@@ -1,16 +1,15 @@
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { useDownloadStore } from '../store/download-store'
-import { Download, X, RotateCcw, CheckCircle, AlertCircle, Clock } from 'lucide-react'
+import { useDownloadStore, useDownloadWs } from '../store/download-store'
+import { Download, X, CheckCircle, AlertCircle, Clock, RefreshCw, Trash2 } from 'lucide-react'
 
 export function DownloadsPage() {
-  const { jobs, loading, fetchDownloads, cancelDownload, removeDownload } = useDownloadStore()
+  const { jobs, loading, fetchDownloads, cancelDownload, removeDownload, retryDownload, clearCompleted } = useDownloadStore()
+
+  // Activate WebSocket for real-time download progress
+  useDownloadWs()
 
   useEffect(() => {
     fetchDownloads()
-    // Poll for updates every 2s
-    const interval = setInterval(fetchDownloads, 2000)
-    return () => clearInterval(interval)
   }, [fetchDownloads])
 
   if (loading && jobs.length === 0) return <DownloadsSkeleton />
@@ -48,6 +47,30 @@ export function DownloadsPage() {
           <span className="text-xs text-text-muted">{jobs.length} items</span>
         </div>
       </div>
+
+      {/* Toolbar */}
+      {jobs.length > 0 && (
+        <div className="flex items-center gap-2 mb-4">
+          {jobs.some(j => j.status === 'failed') && (
+            <button
+              onClick={() => jobs.filter(j => j.status === 'failed').forEach(j => retryDownload(j.id))}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface border border-border-light text-xs text-text-secondary hover:text-text hover:bg-surface-hover transition-colors"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Retry Failed
+            </button>
+          )}
+          {jobs.some(j => j.status === 'completed' || j.status === 'cancelled') && (
+            <button
+              onClick={clearCompleted}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface border border-border-light text-xs text-text-secondary hover:text-danger transition-colors"
+            >
+              <Trash2 className="w-3 h-3" />
+              Clear Completed
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Empty state */}
       {jobs.length === 0 && (

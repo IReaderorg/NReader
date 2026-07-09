@@ -36,7 +36,7 @@ export function PagerReader({ pages, direction = 'ltr', initialPage = 0, onPageC
 
     // Preload next/prev
     const toPreload = [page, page + 1, page - 1].filter(p => p >= 0 && p < pages.length)
-    setPreloaded(prev => {
+    setPreloaded((prev: Set<number>) => {
       const next = new Set(prev)
       for (const p of toPreload) next.add(p)
       return next
@@ -80,11 +80,11 @@ export function PagerReader({ pages, direction = 'ltr', initialPage = 0, onPageC
 
   // Touch swipe
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
+    touchStartX.current = e.touches[0]!.clientX
   }, [])
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dx = e.changedTouches[0]!.clientX - touchStartX.current
     if (Math.abs(dx) > 50) {
       if (dx < 0) nextPage()
       else prevPage()

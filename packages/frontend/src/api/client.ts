@@ -41,6 +41,13 @@ export interface HistoryEntry {
   scrollPosition: number; readAt: string
 }
 
+export interface DownloadJob {
+  id: string; sourceId: string; mangaId: string; chapterId: string
+  chapterNumber: number; status: string; progress: number
+  bytesDownloaded: number; totalBytes?: number; error?: string
+  createdAt: string; completedAt?: string
+}
+
 export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     headers: { 'Content-Type': 'application/json' },
@@ -94,4 +101,24 @@ export const api = {
   }) => apiFetch<HistoryEntry>('/history', { method: 'POST', body: JSON.stringify(entry) }),
   deleteHistory: (mangaId: string) =>
     apiFetch<{ success: boolean }>(`/history/${enc(mangaId)}`, { method: 'DELETE' }),
+
+  // Settings
+  getSettings: () => apiFetch<Record<string, unknown>>('/settings'),
+  setSetting: (key: string, value: unknown) =>
+    apiFetch<Record<string, unknown>>(`/settings/${key}`, { method: 'POST', body: JSON.stringify({ value }) }),
+  deleteSetting: (key: string) =>
+    apiFetch<{ success: boolean }>(`/settings/${key}`, { method: 'DELETE' }),
+
+  // Downloads
+  getDownloads: () => apiFetch<DownloadJob[]>('/downloads'),
+  getDownload: (id: string) => apiFetch<DownloadJob>(`/downloads/${id}`),
+  createDownload: (entry: { sourceId: string; mangaId: string; chapterId: string; chapterNumber: number }) =>
+    apiFetch<DownloadJob>('/downloads', { method: 'POST', body: JSON.stringify(entry) }),
+  cancelDownload: (id: string) =>
+    apiFetch<{ success: boolean }>(`/downloads/${id}/cancel`, { method: 'POST' }),
+  deleteDownload: (id: string) =>
+    apiFetch<{ success: boolean }>(`/downloads/${id}`, { method: 'DELETE' }),
+
+  // Plugins
+  getPlugins: () => apiFetch<SourceInfo[]>('/plugins'),
 }

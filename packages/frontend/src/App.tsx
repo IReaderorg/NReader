@@ -10,6 +10,8 @@ import { LibraryPage } from './pages/LibraryPage'
 import { UpdatesPage } from './pages/UpdatesPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { ReaderPage } from './pages/ReaderPage'
+import { DownloadsPage } from './pages/DownloadsPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { MorePage } from './pages/MorePage'
 
 export function App() {
@@ -27,6 +29,8 @@ export function App() {
             <Route path="/updates" element={<UpdatesPage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/reader/:sourceId/:mangaId/:chapterId" element={<ReaderPage />} />
+            <Route path="/downloads" element={<DownloadsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/more" element={<MorePage />} />
           </Route>
         </Routes>

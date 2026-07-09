@@ -87,8 +87,8 @@ test.describe('Phase 1: Source Loading + Browse', () => {
     const html = page.locator('html')
     const initialTheme = await html.getAttribute('class')
     await page.locator('button[aria-label="Toggle theme"]').click()
-    const toggledTheme = await html.getAttribute('class')
-    expect(toggledTheme).not.toBe(initialTheme)
+    // Wait for the class to change (async state update)
+    await expect(html).not.toHaveClass(initialTheme ?? '', { timeout: 5000 })
   })
 
   test('Frontend: search page has input and responds', async ({ page }) => {

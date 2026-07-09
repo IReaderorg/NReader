@@ -10,6 +10,7 @@ import { PagerReader } from '@ireader/reader-engine'
 import { TextReader } from '@ireader/reader-engine'
 import { ReaderOverlay } from '@ireader/reader-engine'
 import { ArrowLeft, Loader2, Volume2, Languages, ChevronLeft, ChevronRight } from 'lucide-react'
+import type { ReaderThemeColors } from '@ireader/reader-engine'
 
 interface ChapterNav {
   id: string
@@ -23,27 +24,33 @@ export function ReaderPage() {
 
   const {
     mode, brightness, fontSize, currentPage, progress,
+    selectedThemeId,
+    lineHeight, paragraphSpacing, paragraphIndent, textAlignment,
+    colorFilter, autoScrollSpeed, contentFilterEnabled, contentFilterPatterns,
     setMode, setBrightness, setFontSize, setPage, setProgress,
+    setSelectedThemeId,
+    setLineHeight, setParagraphSpacing, setParagraphIndent, setTextAlignment,
+    setColorFilter, setAutoScrollSpeed,
     openChapter,
   } = useReaderStore()
 
   const { recordProgress } = useHistoryStore()
   const { speak, pause, resume, stop, state: ttsState, speed, setSpeed, setVoice, voices, selectedVoice } = useTtsStore()
-  const { enabled: translationEnabled, targetLang } = useTranslationStore()
+  const { enabled: translationEnabled } = useTranslationStore()
 
   const [pages, setPages] = useState<Page[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [overlayVisible, setOverlayVisible] = useState(false)
   const [textContent, setTextContent] = useState('')
-  const [chapterTitle, setChapterTitle] = useState('')
-  const [showTtsPanel, setShowTtsPanel] = useState(false)
+  const [_chapterTitle, setChapterTitle] = useState('')
   const [showTranslationPanel, setShowTranslationPanel] = useState(false)
   const [chapters, setChapters] = useState<ChapterNav[]>([])
   const [currentChapterIndex, setCurrentChapterIndex] = useState(-1)
   const [loadingNext, setLoadingNext] = useState(false)
   const [scrollRestored, setScrollRestored] = useState(false)
   const [initialScrollPos, setInitialScrollPos] = useState(0)
+  const [availableThemes, setAvailableThemes] = useState<{ id: string; name: string; colors: Record<string, string> }[]>([])
 
   const recordTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -121,6 +128,16 @@ export function ReaderPage() {
       })
       .catch(() => setScrollRestored(true))
   }, [loading, scrollRestored, mangaId, chapterId, pages.length])
+
+  // Fetch available themes for the overlay quick-picker
+  useEffect(() => {
+    api.getThemes()
+      .then(setAvailableThemes)
+      .catch(() => { /* non-critical */ })
+  }, [])
+
+  // Resolve current theme colors
+  const selectedThemeColors = availableThemes.find(t => t.id === selectedThemeId)?.colors as ReaderThemeColors | undefined
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -268,8 +285,16 @@ export function ReaderPage() {
         <TextReader
           content={textContent}
           fontSize={fontSize}
+          lineHeight={lineHeight}
+          paragraphSpacing={paragraphSpacing}
+          paragraphIndent={paragraphIndent}
+          textAlignment={textAlignment}
+          colorFilter={colorFilter}
+          themeColors={selectedThemeColors}
+          contentFilterEnabled={contentFilterEnabled}
+          contentFilterPatterns={contentFilterPatterns}
           onProgressChange={(pct) => setProgress(pct)}
-          className="flex-1 bg-[hsl(var(--bg))]"
+          className="flex-1"
         />
       )}
 
@@ -389,9 +414,26 @@ export function ReaderPage() {
         onBrightnessChange={setBrightness}
         fontSize={fontSize}
         onFontSizeChange={setFontSize}
+        lineHeight={lineHeight}
+        onLineHeightChange={setLineHeight}
+        paragraphSpacing={paragraphSpacing}
+        onParagraphSpacingChange={setParagraphSpacing}
+        paragraphIndent={paragraphIndent}
+        onParagraphIndentChange={setParagraphIndent}
+        textAlignment={textAlignment}
+        onTextAlignmentChange={setTextAlignment}
+        colorFilter={colorFilter}
+        onColorFilterChange={setColorFilter}
+        autoScrollActive={autoScrollSpeed > 0}
+        autoScrollSpeed={autoScrollSpeed}
+        onAutoScrollToggle={() => setAutoScrollSpeed(autoScrollSpeed > 0 ? 0 : 5)}
+        onAutoScrollSpeedChange={setAutoScrollSpeed}
         currentPage={currentPage}
         totalPages={pages.length}
-        progress={progress}
+        progress={progress * 100}
+        availableThemes={availableThemes}
+        selectedThemeId={selectedThemeId}
+        onThemeSelect={setSelectedThemeId}
         visible={overlayVisible}
         onClose={() => setOverlayVisible(false)}
       />

@@ -17,6 +17,7 @@ import { TranslationSettingsPage } from './pages/TranslationSettingsPage'
 import { MorePage } from './pages/MorePage'
 import { BackupPage } from './pages/BackupPage'
 import { PluginManagerPage } from './pages/PluginManagerPage'
+import { AppearanceSettingsPage } from './pages/AppearanceSettingsPage'
 
 export function App() {
   return (
@@ -37,6 +38,7 @@ export function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/settings/tts" element={<TtsSettingsPage />} />
             <Route path="/settings/translation" element={<TranslationSettingsPage />} />
+            <Route path="/settings/appearance" element={<AppearanceSettingsPage />} />
             <Route path="/more" element={<MorePage />} />
             <Route path="/backup" element={<BackupPage />} />
             <Route path="/plugins" element={<PluginManagerPage />} />

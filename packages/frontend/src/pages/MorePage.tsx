@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
-import { Palette, Info, Download, Puzzle, Settings, Volume2, Languages, HardDrive, Package } from 'lucide-react'
+import { Palette, Info, Download, Puzzle, Settings, Volume2, Languages, HardDrive, Package, BookOpen } from 'lucide-react'
 
 const items = [
-  { icon: Palette, label: 'Settings', desc: 'Theme, appearance, reader, storage', to: '/settings' },
+  { icon: Settings, label: 'Settings', desc: 'Theme, appearance, reader, storage', to: '/settings' },
+  { icon: BookOpen, label: 'Appearance & Reading', desc: 'Themes, fonts, text layout, filters', to: '/settings/appearance' },
   { icon: Volume2, label: 'Text-to-Speech', desc: 'Configure voice, speed, test', to: '/settings/tts' },
   { icon: Languages, label: 'Translation', desc: 'Engine, languages, glossary', to: '/settings/translation' },
   { icon: HardDrive, label: 'Backup & Restore', desc: 'Export or import your data', to: '/backup' },

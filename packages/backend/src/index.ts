@@ -9,6 +9,8 @@ import { createSettingsRouter } from './api/settings.js'
 import { createDownloadsRouter } from './api/downloads.js'
 import { createGlossaryRouter } from './api/glossary.js'
 import { createBackupRouter } from './api/backup.js'
+import { createReaderThemesRouter } from './api/reader-themes.js'
+import { createFontsRouter } from './api/fonts.js'
 import { BackupService } from './backup/backup-service.js'
 import { proxyApp } from './api/proxy.js'
 import { NodeVmSandbox } from '@ireader/plugin-system'
@@ -78,6 +80,13 @@ export async function startApp(): Promise<Hono> {
   app.route('/api/v1/downloads', createDownloadsRouter(downloadRepo))
   app.route('/api/v1/glossary', createGlossaryRouter(glossaryRepo))
   app.route('/api/v1/backup', createBackupRouter(backupService))
+
+  // Reader themes
+  const settingsRepoForThemes = settingsRepo
+  app.route('/api/v1/reader/themes', createReaderThemesRouter(settingsRepoForThemes))
+
+  // Custom fonts
+  app.route('/api/v1/fonts', createFontsRouter(settingsRepo))
 
   // Plugin list endpoint — returns mock data when no real plugins loaded
   app.get('/api/v1/plugins', (c) => {

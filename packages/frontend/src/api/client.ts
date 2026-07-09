@@ -158,4 +158,28 @@ export const api = {
 
   // Plugin marketplace
   getMarketplace: () => apiFetch<Array<{ id: string; name: string; description: string; type: string; version: string; author: string; installUrl: string; downloads: number; rating: number }>>('/plugins/marketplace'),
+
+  // Reader themes
+  getThemes: () => apiFetch<Array<{ id: string; name: string; isBuiltin: boolean; colors: { background: string; text: string; link: string; highlight: string; header: string; separator: string; card: string } }>>('/reader/themes'),
+  createTheme: (data: { name: string; colors: Record<string, string> }) =>
+    apiFetch<{ id: string }>('/reader/themes', { method: 'POST', body: JSON.stringify(data) }),
+  updateTheme: (id: string, data: { name?: string; colors?: Record<string, string> }) =>
+    apiFetch<{ success: boolean }>(`/reader/themes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteTheme: (id: string) =>
+    apiFetch<{ success: boolean }>(`/reader/themes/${id}`, { method: 'DELETE' }),
+
+  // Fonts
+  getFonts: () => apiFetch<Array<{ id: string; name: string; fileName: string; fileSize: number; format: string; uploadedAt: string }>>('/fonts'),
+  uploadFont: async (file: File): Promise<{ id: string; name: string; format: string }> => {
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch(`${BASE}/fonts`, { method: 'POST', body: form })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: res.statusText }))
+      throw new Error(body.error ?? `HTTP ${res.status}`)
+    }
+    return res.json()
+  },
+  deleteFont: (id: string) =>
+    apiFetch<{ success: boolean }>(`/fonts/${id}`, { method: 'DELETE' }),
 }

@@ -14,13 +14,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('ireader-theme')
       if (stored === 'light' || stored === 'dark') return stored
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      return 'dark'
     }
     return 'dark'
   })
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
+    document.documentElement.classList.toggle('light', theme === 'light')
     localStorage.setItem('ireader-theme', theme)
   }, [theme])
 

@@ -35,12 +35,16 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
   return res.json() as Promise<T>
 }
 
+function enc(v: string): string {
+  return encodeURIComponent(v)
+}
+
 export const api = {
   getSources: () => apiFetch<SourceInfo[]>('/sources'),
   getSource: (id: string) => apiFetch<SourceInfo>(`/sources/${id}`),
   getPopular: (id: string, page = 1) => apiFetch<MangaSummary[]>(`/sources/${id}/popular?page=${page}`),
   search: (id: string, query: string, page = 1) => apiFetch<MangaSummary[]>(`/sources/${id}/search?q=${encodeURIComponent(query)}&page=${page}`),
-  getDetail: (id: string, mangaId: string) => apiFetch<MangaDetail>(`/sources/${id}/detail/${mangaId}`),
-  getChapters: (id: string, mangaId: string) => apiFetch<Chapter[]>(`/sources/${id}/chapters/${mangaId}`),
-  getPages: (id: string, chapterId: string) => apiFetch<Page[]>(`/sources/${id}/pages/${chapterId}`),
+  getDetail: (id: string, mangaId: string) => apiFetch<MangaDetail>(`/sources/${id}/detail/${enc(mangaId)}`),
+  getChapters: (id: string, mangaId: string) => apiFetch<Chapter[]>(`/sources/${id}/chapters/${enc(mangaId)}`),
+  getPages: (id: string, chapterId: string) => apiFetch<Page[]>(`/sources/${id}/pages/${enc(chapterId)}`),
 }

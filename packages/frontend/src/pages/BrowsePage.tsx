@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { api, type MangaSummary } from '../api/client'
+import { MangaCard } from '../components/MangaCard'
+import { ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
 
 export function BrowsePage() {
   const { sourceId } = useParams<{ sourceId: string }>()
@@ -20,40 +22,76 @@ export function BrowsePage() {
   }, [sourceId, page])
 
   if (loading) return <SkeletonGrid />
-  if (error) return <ErrorState message={error} onRetry={() => setPage(p=>p)} />
-  if (manga.length === 0) return <div className="text-center py-12 text-muted-foreground">No manga found</div>
+  if (error) return <ErrorState message={error} onRetry={() => setPage(p => p)} />
+  if (manga.length === 0) return <EmptyState />
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4 capitalize">{sourceId} · Popular</h1>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+    <div>
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
         {manga.map((m) => (
-          <Link key={m.id} to={`/sources/${sourceId}/manga/${encodeURIComponent(m.id)}`}
-            className="group">
-            <div className="aspect-[3/4] bg-muted rounded-lg overflow-hidden mb-2">
-              <img src={m.coverUrl} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                loading="lazy" onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/350x500?text=No+Cover' }} />
-            </div>
-            <h3 className="text-sm font-medium line-clamp-2">{m.title}</h3>
-            {m.author && <p className="text-xs text-muted-foreground">{m.author}</p>}
-          </Link>
+          <MangaCard
+            key={m.id}
+            id={m.id}
+            title={m.title}
+            coverUrl={m.coverUrl}
+            author={m.author}
+            sourceId={sourceId!}
+          />
         ))}
       </div>
-      <div className="flex justify-center gap-4 mt-8">
-        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
-          className="px-4 py-2 bg-secondary rounded-md disabled:opacity-50">Previous</button>
-        <span className="py-2 text-muted-foreground">Page {page}</span>
-        <button onClick={() => setPage(p => p + 1)}
-          className="px-4 py-2 bg-secondary rounded-md">Next</button>
+      <div className="flex items-center justify-center gap-3 mt-6 mb-2">
+        <button
+          onClick={() => setPage(p => Math.max(1, p - 1))}
+          disabled={page <= 1}
+          className="w-9 h-9 flex items-center justify-center rounded-xl border border-border-light bg-surface text-text-secondary disabled:opacity-30 hover:bg-surface-hover transition-colors"
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
+        </button>
+        <span className="text-xs font-medium tabular-nums text-text-secondary bg-surface px-3 py-1 rounded-lg border border-border-light">
+          {page}
+        </span>
+        <button
+          onClick={() => setPage(p => p + 1)}
+          className="w-9 h-9 flex items-center justify-center rounded-xl border border-border-light bg-surface text-text-secondary hover:bg-surface-hover transition-colors"
+          aria-label="Next page"
+        >
+          <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
+        </button>
       </div>
     </div>
   )
 }
 
 function SkeletonGrid() {
-  return <div className="max-w-6xl mx-auto"><h1 className="text-2xl font-bold mb-4 animate-pulse bg-muted rounded w-32 h-8"/><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">{Array.from({length:10}).map((_,i)=><div key={i}><div className="aspect-[3/4] bg-muted rounded-lg mb-2 animate-pulse"/><div className="h-3 bg-muted rounded w-24 animate-pulse"/></div>)}</div></div>
+  return (
+    <div className="grid grid-cols-3 gap-2 md:gap-3">
+      {Array.from({ length: 9 }).map((_, i) => (
+        <div key={i} className="animate-pulse">
+          <div className="aspect-[3/4] bg-surface rounded-lg ring-1 ring-border-light/50" />
+          <div className="h-3 bg-surface rounded mt-1.5 w-3/4" />
+        </div>
+      ))}
+    </div>
+  )
 }
 
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return <div className="max-w-4xl mx-auto text-center py-12"><p className="text-destructive mb-4">{message}</p><button onClick={onRetry} className="px-4 py-2 bg-primary text-primary-foreground rounded-md">Retry</button></div>
+  return (
+    <div className="flex flex-col items-center justify-center py-16">
+      <AlertCircle className="w-9 h-9 text-danger mb-3" strokeWidth={1.5} />
+      <p className="text-sm text-danger mb-4 text-center">{message}</p>
+      <button onClick={onRetry} className="px-4 py-2 bg-accent text-black rounded-lg text-sm font-semibold hover:opacity-90">
+        Retry
+      </button>
+    </div>
+  )
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-16">
+      <p className="text-sm text-text-secondary">No manga found</p>
+    </div>
+  )
 }

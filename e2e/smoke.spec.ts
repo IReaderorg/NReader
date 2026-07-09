@@ -18,7 +18,7 @@ test('sources endpoint returns mock data', async ({ request }) => {
 })
 
 test('popular endpoint returns manga list', async ({ request }) => {
-  const response = await request.get('http://localhost:8080/api/v1/sources/manganato/popular?page=1')
+  const response = await request.get('http://localhost:8080/api/v1/sources/demo/popular?page=1')
   expect(response.ok()).toBeTruthy()
   const body = await response.json()
   expect(Array.isArray(body)).toBeTruthy()
@@ -28,9 +28,10 @@ test('popular endpoint returns manga list', async ({ request }) => {
   expect(body[0]).toHaveProperty('coverUrl')
 })
 
-test('frontend loads and shows sources page', async ({ page }) => {
+test('frontend loads and navigates to sources', async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('text=IReader Next')).toBeVisible()
-  await page.click('text=Sources')
-  await expect(page.locator('text=Sources')).toBeVisible()
+  await expect(page.getByRole('main').getByRole('heading', { name: /IReader/i })).toBeVisible()
+  // Bottom nav: click the Browse tab to reach sources page
+  await page.getByRole('navigation').getByRole('link', { name: /Browse/i }).click()
+  await expect(page.getByRole('heading', { name: /Sources/i })).toBeVisible()
 })

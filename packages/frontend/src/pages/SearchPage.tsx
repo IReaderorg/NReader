@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { api, type MangaSummary } from '../api/client'
+import { MangaCard } from '../components/MangaCard'
+import { Search, Loader2 } from 'lucide-react'
 
 export function SearchPage() {
   const { sourceId } = useParams<{ sourceId: string }>()
@@ -9,6 +11,7 @@ export function SearchPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -29,27 +32,49 @@ export function SearchPage() {
   }, [query, sourceId])
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Search {sourceId}</h1>
-      <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search manga..."
-        className="w-full px-4 py-2 border rounded-md bg-background mb-6" autoFocus />
+    <div>
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" strokeWidth={1.5} />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search manga..."
+          className="w-full pl-10 pr-4 py-2.5 bg-surface rounded-xl text-sm text-text placeholder:text-text-muted/60 border border-border-light focus:outline-none focus:border-accent/50 transition-colors"
+          autoFocus
+        />
+      </div>
 
-      {loading && <div className="text-center animate-pulse py-8">Searching...</div>}
-      {error && <div className="text-destructive text-center py-4">{error}</div>}
-      {!loading && !error && results.length === 0 && query && (
-        <div className="text-center text-muted-foreground py-8">No results for "{query}"</div>
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-5 h-5 text-accent animate-spin" strokeWidth={1.5} />
+        </div>
       )}
+
+      {error && (
+        <div className="text-center py-12">
+          <p className="text-sm text-danger">{error}</p>
+        </div>
+      )}
+
+      {!loading && !error && results.length === 0 && query && (
+        <div className="text-center py-12">
+          <Search className="w-8 h-8 text-text-muted/30 mx-auto mb-2" strokeWidth={1} />
+          <p className="text-sm text-text-secondary">No results for "{query}"</p>
+        </div>
+      )}
+
       {!loading && results.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 gap-2 md:gap-3">
           {results.map((m) => (
-            <Link key={m.id} to={`/sources/${sourceId}/manga/${encodeURIComponent(m.id)}`} className="group">
-              <div className="aspect-[3/4] bg-muted rounded-lg overflow-hidden mb-2">
-                <img src={m.coverUrl} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  loading="lazy" onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/350x500?text=No+Cover' }} />
-              </div>
-              <h3 className="text-sm font-medium line-clamp-2">{m.title}</h3>
-            </Link>
+            <MangaCard
+              key={m.id}
+              id={m.id}
+              title={m.title}
+              coverUrl={m.coverUrl}
+              sourceId={sourceId!}
+            />
           ))}
         </div>
       )}

@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { useSettingsStore } from '../store/settings-store'
 import { api } from '../api/client'
-import { Palette, Monitor, BookOpen, Sun, Moon, Droplet, Puzzle, Download } from 'lucide-react'
+import { Palette, Monitor, BookOpen, Sun, Moon, Droplet, Puzzle, Download, Volume2, Languages } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export function SettingsPage() {
   const { theme, accentColor, setTheme, setAccentColor } = useSettingsStore()
-  const [activeSection, setActiveSection] = useState<'appearance' | 'reader' | 'storage'>('appearance')
+  const [activeSection, setActiveSection] = useState<'appearance' | 'reader' | 'tts' | 'translation' | 'storage'>('appearance')
 
   const sections = [
     { id: 'appearance' as const, label: 'Appearance', icon: Palette },
     { id: 'reader' as const, label: 'Reader', icon: BookOpen },
+    { id: 'tts' as const, label: 'TTS', icon: Volume2 },
+    { id: 'translation' as const, label: 'Translate', icon: Languages },
     { id: 'storage' as const, label: 'Storage', icon: Download },
   ]
 
@@ -19,12 +21,12 @@ export function SettingsPage() {
       <h1 className="text-base font-bold text-text mb-4">Settings</h1>
 
       {/* Section tabs */}
-      <div className="flex gap-1 mb-5 p-1 rounded-xl bg-surface border border-border-light">
+      <div className="flex gap-1 mb-5 p-1 rounded-xl bg-surface border border-border-light overflow-x-auto">
         {sections.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setActiveSection(id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
               activeSection === id
                 ? 'bg-accent text-black shadow-sm'
                 : 'text-text-secondary hover:text-text'
@@ -103,13 +105,49 @@ export function SettingsPage() {
       {activeSection === 'reader' && (
         <div className="space-y-4">
           <p className="text-xs text-text-secondary">
-            Reader settings control how manga chapters are displayed. More options coming soon.
+            Reader settings control how manga chapters are displayed.
           </p>
           <div className="p-4 rounded-xl bg-surface border border-border-light">
             <p className="text-xs text-text-muted">
               Reader mode: Use the overlay controls while reading to switch between Webtoon, Pager, and Text modes.
             </p>
           </div>
+        </div>
+      )}
+
+      {/* TTS */}
+      {activeSection === 'tts' && (
+        <div className="space-y-4">
+          <Link
+            to="/settings/tts"
+            className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-border-light hover:bg-surface-hover transition-colors"
+          >
+            <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
+              <Volume2 className="w-4 h-4 text-accent" strokeWidth={1.5} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-text">Text-to-Speech</p>
+              <p className="text-xs text-text-secondary">Configure voice, speed, test playback</p>
+            </div>
+          </Link>
+        </div>
+      )}
+
+      {/* Translation */}
+      {activeSection === 'translation' && (
+        <div className="space-y-4">
+          <Link
+            to="/settings/translation"
+            className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-border-light hover:bg-surface-hover transition-colors"
+          >
+            <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
+              <Languages className="w-4 h-4 text-accent" strokeWidth={1.5} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-text">Translation</p>
+              <p className="text-xs text-text-secondary">Engine selection, language pairs, glossary</p>
+            </div>
+          </Link>
         </div>
       )}
 
@@ -130,7 +168,7 @@ export function SettingsPage() {
           </Link>
 
           <Link
-            to="/more"
+            to="/sources"
             className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-border-light hover:bg-surface-hover transition-colors"
           >
             <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">

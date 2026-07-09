@@ -97,6 +97,12 @@ importers:
       '@ireader/reader-engine':
         specifier: workspace:*
         version: link:../reader-engine
+      '@ireader/translation-engine':
+        specifier: workspace:*
+        version: link:../translation-engine
+      '@ireader/tts-engine':
+        specifier: workspace:*
+        version: link:../tts-engine
       '@radix-ui/react-dropdown-menu':
         specifier: ^2.0.0
         version: 2.1.20(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -227,6 +233,26 @@ importers:
       '@ireader/plugin-system':
         specifier: workspace:*
         version: link:../plugin-system
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/translation-engine:
+    dependencies:
+      '@ireader/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/tts-engine:
+    dependencies:
+      '@ireader/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       typescript:
         specifier: ^5.5.0

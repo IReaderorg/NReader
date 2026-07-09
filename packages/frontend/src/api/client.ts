@@ -48,6 +48,12 @@ export interface DownloadJob {
   createdAt: string; completedAt?: string
 }
 
+export interface GlossaryEntry {
+  id: string; sourceLang: string; targetLang: string
+  sourceText: string; targetText: string; context?: string
+  createdAt: string; updatedAt: string
+}
+
 export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     headers: { 'Content-Type': 'application/json' },
@@ -121,4 +127,16 @@ export const api = {
 
   // Plugins
   getPlugins: () => apiFetch<SourceInfo[]>('/plugins'),
+
+  // Glossary
+  getGlossary: () => apiFetch<GlossaryEntry[]>('/glossary'),
+  getGlossaryEntry: (id: string) => apiFetch<GlossaryEntry>(`/glossary/${id}`),
+  searchGlossary: (sourceText: string, sourceLang: string, targetLang: string) =>
+    apiFetch<GlossaryEntry | null>(`/glossary/search?sourceText=${enc(sourceText)}&sourceLang=${enc(sourceLang)}&targetLang=${enc(targetLang)}`),
+  addGlossaryEntry: (entry: { sourceLang: string; targetLang?: string; sourceText: string; targetText: string; context?: string }) =>
+    apiFetch<GlossaryEntry>('/glossary', { method: 'POST', body: JSON.stringify(entry) }),
+  updateGlossaryEntry: (id: string, data: Partial<GlossaryEntry>) =>
+    apiFetch<{ success: boolean }>(`/glossary/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteGlossaryEntry: (id: string) =>
+    apiFetch<{ success: boolean }>(`/glossary/${id}`, { method: 'DELETE' }),
 }

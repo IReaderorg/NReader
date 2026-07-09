@@ -31,7 +31,11 @@
       "@ireader/reader-engine": ["./packages/reader-engine/src"],
       "@ireader/reader-engine/*": ["./packages/reader-engine/src/*"],
       "@ireader/frontend": ["./packages/frontend/src"],
-      "@ireader/frontend/*": ["./packages/frontend/src/*"]
+      "@ireader/frontend/*": ["./packages/frontend/src/*"],
+      "@ireader/tts-engine": ["./packages/tts-engine/src"],
+      "@ireader/tts-engine/*": ["./packages/tts-engine/src/*"],
+      "@ireader/translation-engine": ["./packages/translation-engine/src"],
+      "@ireader/translation-engine/*": ["./packages/translation-engine/src/*"]
     }
   },
   "include": ["packages/*/src"],

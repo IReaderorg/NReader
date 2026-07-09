@@ -141,6 +141,18 @@ export interface ApiError {
   details?: Record<string, unknown>
 }
 
+// Translation glossary
+export interface GlossaryEntry {
+  id: string
+  sourceLang: string
+  targetLang: string
+  sourceText: string
+  targetText: string
+  context?: string
+  createdAt: string
+  updatedAt: string
+}
+
 // WebSocket message
 export interface WsMessage {
   channel: string

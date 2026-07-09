@@ -1,4 +1,4 @@
-import type { LibraryEntry, Category, HistoryEntry, Setting, DownloadJob, PluginMeta } from '../entities/index.js'
+import type { LibraryEntry, Category, HistoryEntry, Setting, DownloadJob, PluginMeta, GlossaryEntry } from '../entities/index.js'
 
 export interface LibraryRepository {
   getAll(): Promise<LibraryEntry[]>
@@ -42,5 +42,14 @@ export interface PluginRepository {
   getById(id: string): Promise<PluginMeta | null>
   add(plugin: PluginMeta): Promise<void>
   update(plugin: Partial<PluginMeta> & { id: string }): Promise<void>
+  remove(id: string): Promise<void>
+}
+
+export interface GlossaryRepository {
+  getAll(): Promise<GlossaryEntry[]>
+  getById(id: string): Promise<GlossaryEntry | null>
+  search(sourceText: string, sourceLang: string, targetLang: string): Promise<GlossaryEntry | null>
+  add(entry: GlossaryEntry): Promise<void>
+  update(entry: Partial<GlossaryEntry> & { id: string }): Promise<void>
   remove(id: string): Promise<void>
 }

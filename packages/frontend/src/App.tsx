@@ -12,6 +12,8 @@ import { HistoryPage } from './pages/HistoryPage'
 import { ReaderPage } from './pages/ReaderPage'
 import { DownloadsPage } from './pages/DownloadsPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { TtsSettingsPage } from './pages/TtsSettingsPage'
+import { TranslationSettingsPage } from './pages/TranslationSettingsPage'
 import { MorePage } from './pages/MorePage'
 
 export function App() {
@@ -31,6 +33,8 @@ export function App() {
             <Route path="/reader/:sourceId/:mangaId/:chapterId" element={<ReaderPage />} />
             <Route path="/downloads" element={<DownloadsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/tts" element={<TtsSettingsPage />} />
+            <Route path="/settings/translation" element={<TranslationSettingsPage />} />
             <Route path="/more" element={<MorePage />} />
           </Route>
         </Routes>

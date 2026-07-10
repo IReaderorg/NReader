@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   X, Sun, Moon, Upload, Trash2,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
-  BookOpen, Layout, Play, Square,
-  Type, Palette, Settings, Loader2,
+  BookOpen, Layout, Play, Square, Filter,
+  Type, Palette, Settings, Loader2, ArrowLeftRight,
 } from 'lucide-react'
 import type { ReaderMode, TextAlignment, ColorFilterType, FontEntry } from '../store/reader-store'
 import { useReaderStore } from '../store/reader-store'
 import { useScrollLock } from '../hooks/useScrollLock'
+import { ContentFilterEditor } from './ContentFilterEditor'
 import { api } from '../api/client'
 
 // ─── Presets ────────────────────────────────────────────────────────────
@@ -332,10 +333,14 @@ function GeneralTab() {
     mode, autoScrollSpeed,
     immersiveMode, showScrollbar, showReadingTime, volumeNavigation,
     screenAwake, bionicReading, webviewBg, selectableMode, reducedAnimations,
+    contentFilterEnabled, pagerDirection,
     setMode, setAutoScrollSpeed,
     setImmersiveMode, setShowScrollbar, setShowReadingTime, setVolumeNavigation,
     setScreenAwake, setBionicReading, setWebviewBg, setSelectableMode, setReducedAnimations,
+    setPagerDirection,
   } = useReaderStore()
+
+  const [filterEditorVisible, setFilterEditorVisible] = useState(false)
 
   return (
     <div className="overflow-y-auto h-full">
@@ -379,6 +384,23 @@ function GeneralTab() {
         <span className="text-xs text-text-muted tabular-nums w-5">{autoScrollSpeed || 5}</span>
       </div>
 
+      <SectionHeader title="Pager" />
+      <div className="flex items-center justify-between px-4 py-2">
+        <div className="min-w-0">
+          <span className="text-sm text-text block">Reading Direction</span>
+          <span className="text-[11px] text-text-muted block">{pagerDirection === 'rtl' ? 'Right-to-left (manga)' : 'Left-to-right (comic)'}</span>
+        </div>
+        <button
+          onClick={() => setPagerDirection(pagerDirection === 'rtl' ? 'ltr' : 'rtl')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            pagerDirection === 'rtl' ? 'bg-accent text-black' : 'bg-surface-hover/50 text-text-secondary'
+          }`}
+        >
+          <ArrowLeftRight className="w-3.5 h-3.5" />
+          {pagerDirection === 'rtl' ? 'RTL' : 'LTR'}
+        </button>
+      </div>
+
       <SectionHeader title="Display" />
       <ToggleRow label="Immersive Mode" subtitle="Hide bars while reading" checked={immersiveMode} onChange={setImmersiveMode} />
       <ToggleRow label="Show Scrollbar" checked={showScrollbar} onChange={setShowScrollbar} />
@@ -394,7 +416,25 @@ function GeneralTab() {
       <SectionHeader title="Performance" />
       <ToggleRow label="Reduced Animations" subtitle="Better performance on older devices" checked={reducedAnimations} onChange={setReducedAnimations} />
 
+      <SectionHeader title="Content Filter" />
+      <div className="px-4 py-2">
+        <button
+          onClick={() => setFilterEditorVisible(true)}
+          className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-surface-hover/30 hover:bg-surface-hover/50 transition-colors text-left"
+        >
+          <div>
+            <span className="text-sm text-text">Filter Patterns</span>
+            <span className="text-[11px] text-text-muted block mt-0.5">
+              {contentFilterEnabled ? 'Enabled' : 'Disabled'} — Edit regex patterns
+            </span>
+          </div>
+          <Filter className="w-4 h-4 text-text-muted" />
+        </button>
+      </div>
+
       <div className="h-8" />
+
+      <ContentFilterEditor visible={filterEditorVisible} onClose={() => setFilterEditorVisible(false)} />
     </div>
   )
 }

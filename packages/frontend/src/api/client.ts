@@ -182,6 +182,21 @@ export const api = {
   reportChapter: (data: { sourceId: string; chapterId: string; chapterName?: string; category: string; description?: string }) =>
     apiFetch<{ success: boolean; reportId: string }>('/reports', { method: 'POST', body: JSON.stringify(data) }),
 
+  // Reading Stats
+  getReadingStats: (mangaId: string) => apiFetch<{ mangaId: string; sourceId: string; totalTimeMs: number; chaptersRead: number; lastReadAt: string }>(`/reading-stats/${encodeURIComponent(mangaId)}`),
+  getAllReadingStats: () => apiFetch<Array<{ mangaId: string; sourceId: string; totalTimeMs: number; chaptersRead: number; lastReadAt: string }>>('/reading-stats'),
+  recordReadingStats: (data: { mangaId: string; sourceId: string; totalTimeMs?: number; chaptersRead?: number }) =>
+    apiFetch<{ mangaId: string; sourceId: string; totalTimeMs: number; chaptersRead: number; lastReadAt: string }>('/reading-stats', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Streaks
+  getStreaks: (days?: number) => apiFetch<Array<{ date: string; read: boolean }>>(`/streaks${days ? `?days=${days}` : ''}`),
+  recordStreak: () => apiFetch<{ date: string; recorded: boolean }>('/streaks', { method: 'POST', body: JSON.stringify({}) }),
+
+  // Goals
+  getGoals: () => apiFetch<{ dailyTimeMinutes: number; dailyChapters: number }>('/goals'),
+  setGoals: (data: { dailyTimeMinutes?: number; dailyChapters?: number }) =>
+    apiFetch<{ dailyTimeMinutes: number; dailyChapters: number }>('/goals', { method: 'POST', body: JSON.stringify(data) }),
+
   // Fonts
   getFonts: () => apiFetch<Array<{ id: string; name: string; fileName: string; fileSize: number; format: string; uploadedAt: string }>>('/fonts'),
   uploadFont: async (file: File): Promise<{ id: string; name: string; format: string }> => {

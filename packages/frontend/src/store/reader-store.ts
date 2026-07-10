@@ -65,6 +65,8 @@ interface ReaderStore {
   webviewBg: boolean
   selectableMode: boolean
   reducedAnimations: boolean
+  /** Pager reading direction */
+  pagerDirection: 'ltr' | 'rtl'
   /** Bookmark state */
   isBookmarked: boolean
   /** Session-only */
@@ -106,6 +108,8 @@ interface ReaderStore {
   setWebviewBg: (v: boolean) => void
   setSelectableMode: (v: boolean) => void
   setReducedAnimations: (v: boolean) => void
+  /** Pager direction */
+  setPagerDirection: (d: 'ltr' | 'rtl') => void
   /** Bookmark */
   setBookmarked: (v: boolean) => void
 }
@@ -147,6 +151,7 @@ export const useReaderStore = create<ReaderStore>()(
       webviewBg: false,
       selectableMode: false,
       reducedAnimations: false,
+      pagerDirection: 'ltr',
       isBookmarked: false,
       brightness: 100,
       currentPage: 0,
@@ -197,6 +202,7 @@ export const useReaderStore = create<ReaderStore>()(
       setWebviewBg: (v) => set({ webviewBg: v }),
       setSelectableMode: (v) => set({ selectableMode: v }),
       setReducedAnimations: (v) => set({ reducedAnimations: v }),
+      setPagerDirection: (d) => set({ pagerDirection: d }),
       setBookmarked: (v) => set({ isBookmarked: v }),
     }),
     {
@@ -224,6 +230,7 @@ export const useReaderStore = create<ReaderStore>()(
         webviewBg: state.webviewBg,
         selectableMode: state.selectableMode,
         reducedAnimations: state.reducedAnimations,
+        pagerDirection: state.pagerDirection,
       }),
     }
   )

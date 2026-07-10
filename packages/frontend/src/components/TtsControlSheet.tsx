@@ -12,7 +12,7 @@ interface TtsControlSheetProps {
 
 export function TtsControlSheet({ visible, onClose, textContent }: TtsControlSheetProps) {
   const {
-    state: ttsState, speed, setSpeed,
+    state: ttsState, speed, setSpeed, pitch, setPitch,
     voices, selectedVoice, setVoice,
     speak, pause, resume, stop, text,
   } = useTtsStore()
@@ -152,6 +152,30 @@ export function TtsControlSheet({ visible, onClose, textContent }: TtsControlShe
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Pitch */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">Pitch</p>
+              <span className="text-xs text-text-muted tabular-nums">{pitch.toFixed(1)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPitch(Math.max(0.5, pitch - 0.1))}
+                className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-hover/50 text-text-secondary text-sm shrink-0 hover:bg-surface-hover"
+              >−</button>
+              <input
+                type="range" min={0.5} max={2.0} step={0.1}
+                value={pitch}
+                onChange={e => setPitch(Number(e.target.value))}
+                className="flex-1 h-1.5 appearance-none bg-white/20 rounded-full accent-[hsl(var(--accent))]"
+              />
+              <button
+                onClick={() => setPitch(Math.min(2.0, pitch + 0.1))}
+                className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-hover/50 text-text-secondary text-sm shrink-0 hover:bg-surface-hover"
+              >+</button>
             </div>
           </div>
 

@@ -29,6 +29,7 @@ export interface TtsEngine {
   stop(): void
   setVoice(voiceId: string): void
   setSpeed(speed: number): void
+  setPitch(pitch: number): void
   getVoices(): Promise<TtsVoice[]>
   getState(): TtsState
   on(event: 'statechange', handler: (state: TtsState) => void): void

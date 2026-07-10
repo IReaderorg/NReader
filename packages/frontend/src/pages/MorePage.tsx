@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Info, Shield, Wifi, Settings2, FileText, ArrowRight, Volume2, Languages, Download, HardDrive, Puzzle } from 'lucide-react'
+import { Info, Shield, Wifi, Settings2, FileText, ArrowRight, Volume2, Languages, Download, HardDrive, Puzzle, BarChart3, CalendarDays } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 const sections = [
@@ -48,6 +48,8 @@ export function MorePage() {
         <LinkItem icon={Puzzle} label="Plugin Manager" desc="Browse and install plugins" to="/plugins" />
         <LinkItem icon={Settings2} label="Source Manager" desc="Manage installed sources" to="/sources/manager" />
         <LinkItem icon={Download} label="Downloads" desc="Manage downloaded chapters" to="/downloads" />
+        <LinkItem icon={BarChart3} label="Reading Stats" desc="Track your reading time and progress" to="/stats" />
+        <LinkItem icon={CalendarDays} label="Streaks" desc="Reading streak history and records" to="/stats/streaks" />
 
         {/* Divider */}
         <div className="my-3 border-t border-border-light" />

@@ -14,6 +14,9 @@ import { createReaderThemesRouter } from './api/reader-themes.js'
 import { createFontsRouter } from './api/fonts.js'
 import { createReportRouter } from './api/report.js'
 import { createBookmarkRouter } from './api/bookmarks.js'
+import { createReadingStatsRouter } from './api/reading-stats.js'
+import { createStreaksRouter } from './api/streaks.js'
+import { createReadingGoalsRouter } from './api/reading-goals.js'
 import { BackupService } from './backup/backup-service.js'
 import { AutoBackupScheduler } from './backup/auto-backup-scheduler.js'
 import { proxyApp } from './api/proxy.js'
@@ -101,6 +104,15 @@ export async function startApp(): Promise<Hono> {
 
   // Bookmarks
   app.route('/api/v1/bookmarks', createBookmarkRouter())
+
+  // Reading Stats
+  app.route('/api/v1/reading-stats', createReadingStatsRouter())
+
+  // Streaks
+  app.route('/api/v1/streaks', createStreaksRouter())
+
+  // Goals
+  app.route('/api/v1/goals', createReadingGoalsRouter())
 
   // Plugin list endpoint — returns mock data when no real plugins loaded
   app.get('/api/v1/plugins', (c) => {

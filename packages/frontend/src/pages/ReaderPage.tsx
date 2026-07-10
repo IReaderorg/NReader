@@ -4,9 +4,8 @@ import { api, type Page, type HistoryEntry } from '../api/client'
 import { useReaderStore } from '../store/reader-store'
 import { useHistoryStore } from '../store/history-store'
 import { useTtsStore } from '../store/tts-store'
-import { useTranslationStore } from '../store/translation-store'
 import { WebtoonReader, PagerReader, TextReader } from '@ireader/reader-engine'
-import { Loader2, Languages, Volume2, Gauge } from 'lucide-react'
+import { Loader2, Languages, Volume2, Gauge, ChevronLeft, ChevronRight, Play } from 'lucide-react'
 import { ReaderTopBar } from '../components/ReaderTopBar'
 import { ReaderBottomBar } from '../components/ReaderBottomBar'
 import { FindInChapterBar } from '../components/FindInChapterBar'
@@ -16,6 +15,7 @@ import { ChapterDrawer } from '../components/ChapterDrawer'
 import { ReportChapterDialog } from '../components/ReportChapterDialog'
 import { TtsControlSheet } from '../components/TtsControlSheet'
 import { ReadingStatsPanel } from '../components/ReadingStatsPanel'
+import { TranslationPanel } from '../components/TranslationPanel'
 import type { IssueCategory } from '../components/ReportChapterDialog'
 import type { ReaderThemeColors } from '@ireader/reader-engine'
 
@@ -48,17 +48,19 @@ export function ReaderPage() {
     mode, brightness, fontSize, currentPage, progress,
     selectedThemeId,
     lineHeight, paragraphSpacing, paragraphIndent, textAlignment,
-    colorFilter, contentFilterEnabled, contentFilterPatterns,
+    colorFilter,    contentFilterEnabled, contentFilterPatterns,
+    autoScrollSpeed,
+    pagerDirection,
     setMode,
     immersiveMode, showScrollbar, showReadingTime, volumeNavigation,
-    screenAwake, reducedAnimations,
+    screenAwake, reducedAnimations, bionicReading,
+    selectableMode, webviewBg,
     isBookmarked, setBookmarked,
     openChapter,
   } = useReaderStore()
 
   const { recordProgress } = useHistoryStore()
   const { speak, pause, resume, state: ttsState } = useTtsStore()
-  const { enabled: translationEnabled } = useTranslationStore()
 
   // Data state
   const [pages, setPages] = useState<Page[]>([])
@@ -77,9 +79,8 @@ export function ReaderPage() {
   const [settingsSheetVisible, setSettingsSheetVisible] = useState(false)
   const [chapterDrawerVisible, setChapterDrawerVisible] = useState(false)
   const [barsVisible, setBarsVisible] = useState(!immersiveMode)
-  const [showTranslationPanel, setShowTranslationPanel] = useState(false)
-  void showTranslationPanel; void setShowTranslationPanel
   const [reportDialogVisible, setReportDialogVisible] = useState(false)
+  const [translationPanelVisible, setTranslationPanelVisible] = useState(false)
   const [ttsSheetVisible, setTtsSheetVisible] = useState(false)
   const [statsVisible, setStatsVisible] = useState(false)
 
@@ -91,6 +92,7 @@ export function ReaderPage() {
 
   // Reading session timer
   const [sessionStartTime] = useState(() => Date.now())
+  const chapterStartTimeRef = useRef(Date.now())
   const [chaptersRead, setChaptersRead] = useState(1)
 
   const recordTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -120,6 +122,9 @@ export function ReaderPage() {
     setFindVisible(false)
 
     openChapter(sourceId, mangaId ?? '', chapterId, 0)
+
+    // Record reading streak for today
+    api.recordStreak().catch(() => {})
 
     api.getPages(sourceId, chapterId)
       .then(data => {
@@ -182,6 +187,12 @@ export function ReaderPage() {
     if (index < 0 || index >= chapters.length) return
     const ch = chapters[index]
     if (!ch) return
+    // Record stats for current manga before navigating
+    if (mangaId && sourceId) {
+      const elapsed = Date.now() - chapterStartTimeRef.current
+      api.recordReadingStats({ mangaId, sourceId, totalTimeMs: elapsed, chaptersRead: 1 }).catch(() => {})
+    }
+    chapterStartTimeRef.current = Date.now()
     setChaptersRead(prev => prev + 1)
     setLoadingNext(false)
     setScrollRestored(false)
@@ -356,7 +367,100 @@ export function ReaderPage() {
     }
   }, [screenAwake])
 
-  // --- Render ---
+  // --- webviewBg: prefetch next chapter ---
+  useEffect(() => {
+    if (!webviewBg || !sourceId || currentChapterIndex < 0 || currentChapterIndex >= chapters.length - 1) return
+    const nextCh = chapters[currentChapterIndex + 1]
+    if (!nextCh) return
+    api.getPages(sourceId, nextCh.id).catch(() => {})
+  }, [webviewBg, sourceId, currentChapterIndex, chapters])
+
+  // --- Auto-scroll (text mode) ---
+  const [autoScrollActive, setAutoScrollActive] = useState(true)
+  const autoScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (mode !== 'text' || autoScrollSpeed <= 0 || !autoScrollActive) return
+    const container = document.querySelector('[data-reader-content]') as HTMLElement | null
+    if (!container) return
+    const pixelsPerTick = 0.5 + (autoScrollSpeed / 10) * 4
+    const id = setInterval(() => {
+      container.scrollBy({ top: pixelsPerTick })
+    }, 50)
+    // Pause auto-scroll on manual scroll, resume after 3s of inactivity
+    const onUserScroll = () => {
+      clearInterval(id)
+      setAutoScrollActive(false)
+      if (autoScrollTimerRef.current) clearTimeout(autoScrollTimerRef.current)
+      autoScrollTimerRef.current = setTimeout(() => {
+        setAutoScrollActive(true)
+      }, 3000)
+    }
+    container.addEventListener('wheel', onUserScroll, { once: true })
+    container.addEventListener('touchmove', onUserScroll, { once: true })
+    return () => {
+      clearInterval(id)
+      container.removeEventListener('wheel', onUserScroll)
+      container.removeEventListener('touchmove', onUserScroll)
+    }
+  }, [mode, autoScrollSpeed, autoScrollActive])
+
+  // --- Swipe gesture navigation ---
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null)
+
+  useEffect(() => {
+    const container = document.querySelector('[data-reader-content]') as HTMLElement | null
+    const el = container ?? document.body
+    let startX = 0
+    let startY = 0
+    let currentX = 0
+    const SWIPE_THRESHOLD = 80
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return
+      startX = e.touches[0]?.clientX ?? 0
+      startY = e.touches[0]?.clientY ?? 0
+      currentX = startX
+    }
+    const onTouchMove = (e: TouchEvent) => {
+      currentX = e.touches[0]?.clientX ?? currentX
+      const dx = currentX - startX
+      const dy = Math.abs((e.touches[0]?.clientY ?? startY) - startY)
+      if (Math.abs(dx) < 30 || Math.abs(dx) < dy) {
+        setSwipeDirection(null)
+        return
+      }
+      // Show edge indicator
+      if (dx > 40 && currentChapterIndex > 0) {
+        setSwipeDirection('right')
+      } else if (dx < -40 && currentChapterIndex < chapters.length - 1) {
+        setSwipeDirection('left')
+      } else {
+        setSwipeDirection(null)
+      }
+    }
+    const onTouchEnd = (e: TouchEvent) => {
+      setSwipeDirection(null)
+      const endX = e.changedTouches[0]?.clientX ?? 0
+      const endY = e.changedTouches[0]?.clientY ?? 0
+      const dx = endX - startX
+      const dy = endY - startY
+      if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < Math.abs(dy)) return
+      if (dx > 0 && currentChapterIndex > 0) {
+        loadChapter(currentChapterIndex - 1)
+      } else if (dx < 0 && currentChapterIndex < chapters.length - 1) {
+        loadChapter(currentChapterIndex + 1)
+      }
+    }
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove', onTouchMove, { passive: true })
+    el.addEventListener('touchend', onTouchEnd, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [currentChapterIndex, chapters.length, loadChapter])
   if (loading) return (
     <div className="fixed inset-0 z-40 bg-black flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
@@ -378,7 +482,7 @@ export function ReaderPage() {
   const chapterDisplayTitle = chapterTitle || currentChapter?.title || 'Reader'
 
   return (
-    <div className={`fixed inset-0 z-40 flex flex-col bg-black ${!showScrollbar ? 'scrollbar-none' : ''} ${reducedAnimations ? 'motion-reduce' : ''}`} style={{ filter: `brightness(${readerBrightness})` }}>
+    <div className={`fixed inset-0 z-40 flex flex-col bg-black ${!showScrollbar ? 'scrollbar-none' : ''} ${reducedAnimations ? 'motion-reduce' : ''} ${!selectableMode ? 'select-none' : ''}`} style={{ filter: `brightness(${readerBrightness})` }}>
       {/* --- Reader Content --- */}
       {mode === 'webtoon' && (
         <WebtoonReader
@@ -391,7 +495,7 @@ export function ReaderPage() {
       {mode === 'pager' && (
         <PagerReader
           pages={pages}
-          direction="ltr"
+          direction={pagerDirection}
           onPageChange={(page) => handlePageChange(page, 0)}
           onCenterTap={toggleBars}
           className="flex-1"
@@ -409,9 +513,40 @@ export function ReaderPage() {
           themeColors={selectedThemeColors}
           contentFilterEnabled={contentFilterEnabled}
           contentFilterPatterns={contentFilterPatterns}
+          bionicReading={bionicReading}
           onProgressChange={(pct) => useReaderStore.getState().setProgress(pct)}
           className="flex-1"
         />
+      )}
+
+      {/* --- Swipe edge indicators --- */}
+      {swipeDirection && (
+        <>
+          {swipeDirection === 'right' && (
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 z-25 pointer-events-none animate-in fade-in slide-in-from-left-2 duration-150">
+              <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                <ChevronLeft className="w-6 h-6 text-accent" />
+              </div>
+            </div>
+          )}
+          {swipeDirection === 'left' && (
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 z-25 pointer-events-none animate-in fade-in slide-in-from-right-2 duration-150">
+              <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                <ChevronRight className="w-6 h-6 text-accent" />
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* --- Auto-scroll speed indicator --- */}
+      {mode === 'text' && autoScrollSpeed > 0 && barsVisible && !settingsSheetVisible && (
+        <div className="absolute bottom-36 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-surface/80 backdrop-blur-sm border border-border-light shadow pointer-events-none animate-in fade-in">
+          <Play className="w-3 h-3 text-accent" />
+          <span className="text-[10px] font-medium text-text-muted tabular-nums">
+            {autoScrollSpeed}/10
+          </span>
+        </div>
       )}
 
       {/* --- Tap zone for non-pager modes --- */}
@@ -516,9 +651,9 @@ export function ReaderPage() {
       )}
 
       {/* --- Translation toggle --- */}
-      {translationEnabled && mode === 'text' && barsVisible && !settingsSheetVisible && ttsState === 'idle' && (
+      {mode === 'text' && barsVisible && !settingsSheetVisible && ttsState === 'idle' && (
         <button
-          onClick={() => setShowTranslationPanel(v => !v)}
+          onClick={() => { setTranslationPanelVisible(true); setBarsVisible(false) }}
           className="absolute bottom-48 right-4 z-30 w-10 h-10 rounded-full bg-accent/20 text-accent flex items-center justify-center hover:bg-accent/30 transition-colors shadow-lg"
           title="Translation"
         >
@@ -592,6 +727,13 @@ export function ReaderPage() {
         sessionStartTime={sessionStartTime}
         textContent={textContent}
         chaptersRead={chaptersRead}
+      />
+
+      {/* --- Translation Panel --- */}
+      <TranslationPanel
+        visible={translationPanelVisible}
+        onClose={() => { setTranslationPanelVisible(false); setBarsVisible(true) }}
+        textContent={textContent}
       />
     </div>
   )

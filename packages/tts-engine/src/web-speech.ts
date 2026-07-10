@@ -11,12 +11,14 @@ export class WebSpeechEngine implements TtsEngine {
   private _state: TtsState = 'idle'
   private handlers = new Set<StateHandler>()
   private _speed: number = 1
+  private _pitch: number = 1
   private _voice: string | null = null
   private charIndex = 0
 
   constructor(config?: Partial<TtsEngineConfig>) {
     this.synth = window.speechSynthesis
     this._speed = config?.speed ?? 1
+    this._pitch = config?.pitch ?? 1
     this._voice = config?.voice ?? null
   }
 
@@ -37,6 +39,7 @@ export class WebSpeechEngine implements TtsEngine {
     return new Promise((resolve) => {
       const utter = new SpeechSynthesisUtterance(text)
       utter.rate = this._speed
+      utter.pitch = this._pitch
       utter.volume = 1
 
       if (this._voice) {
@@ -90,6 +93,7 @@ export class WebSpeechEngine implements TtsEngine {
 
   setVoice(voiceId: string): void { this._voice = voiceId }
   setSpeed(speed: number): void { this._speed = speed }
+  setPitch(pitch: number): void { this._pitch = pitch }
 
   async getVoices(): Promise<TtsVoice[]> {
     // Voices may not be loaded immediately

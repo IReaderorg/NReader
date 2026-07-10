@@ -183,6 +183,7 @@ export class GradioTTSEngine implements TtsEngine {
 
   setVoice(voiceId: string): void { this._voice = voiceId; }
   setSpeed(speed: number): void { this._speed = speed; }
+  setPitch(_pitch: number): void { /* Gradio handles pitch via voice selection */ }
 
   async getVoices(): Promise<TtsVoice[]> {
     if (this.voices.length > 0) return this.voices

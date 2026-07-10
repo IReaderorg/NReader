@@ -6,6 +6,40 @@ function cn(...inputs: (string | undefined | null | false)[]): string {
   return twMerge(clsx(inputs))
 }
 
+/** Process text to bold the first ~50% of each word for bionic reading */
+function applyBionicReading(html: string): string {
+  // Use a temp div to traverse text nodes
+  const div = document.createElement('div')
+  div.innerHTML = html
+
+  const walk = (node: Node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent || ''
+      const words = text.split(/(\s+)/)
+      const fragment = document.createDocumentFragment()
+      for (const word of words) {
+        if (/^\s+$/.test(word) || word.length <= 2) {
+          fragment.appendChild(document.createTextNode(word))
+        } else {
+          const half = Math.ceil(word.length * 0.5)
+          const bold = document.createElement('b')
+          bold.textContent = word.slice(0, half)
+          fragment.appendChild(bold)
+          fragment.appendChild(document.createTextNode(word.slice(half)))
+        }
+      }
+      node.parentNode?.replaceChild(fragment, node)
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      // Skip script/style/pre elements
+      const tag = (node as Element).tagName.toLowerCase()
+      if (tag === 'script' || tag === 'style' || tag === 'pre' || tag === 'code') return
+      Array.from(node.childNodes).forEach(walk)
+    }
+  }
+  walk(div)
+  return div.innerHTML
+}
+
 export type TextAlignment = 'left' | 'center' | 'right' | 'justify'
 export type ColorFilterType = 'none' | 'sepia' | 'invert' | 'grayscale'
 export interface ReaderThemeColors {
@@ -30,6 +64,7 @@ interface TextReaderProps {
   themeColors?: ReaderThemeColors
   contentFilterEnabled?: boolean
   contentFilterPatterns?: string
+  bionicReading?: boolean
   onScroll?: (scrollPos: number) => void
   onProgressChange?: (progress: number) => void
   className?: string
@@ -97,6 +132,7 @@ export function TextReader({
   themeColors,
   contentFilterEnabled = false,
   contentFilterPatterns = '',
+  bionicReading = false,
   onScroll,
   onProgressChange,
   className,
@@ -121,8 +157,9 @@ export function TextReader({
     onProgressChange?.(pct / 100)
   }, [onScroll, onProgressChange])
 
-  const sanitized = sanitizeHtml(content)
-  const filtered = applyContentFilter(sanitized, contentFilterEnabled, contentFilterPatterns)
+  let sanitized = sanitizeHtml(content)
+  sanitized = applyContentFilter(sanitized, contentFilterEnabled, contentFilterPatterns)
+  if (bionicReading) sanitized = applyBionicReading(sanitized)
 
   const bgColor = themeColors?.background || 'hsl(var(--bg))'
   const textColor = themeColors?.text || 'hsl(var(--text))'
@@ -133,6 +170,7 @@ export function TextReader({
   return (
     <div
       ref={scrollRef}
+      data-reader-content
       className={cn('h-full overflow-y-auto px-6 py-6', className)}
       style={{
         backgroundColor: bgColor,
@@ -160,7 +198,7 @@ export function TextReader({
           .nreader-content p:last-child { margin-bottom: 0; }
         `}</style>
         <div
-          dangerouslySetInnerHTML={{ __html: filtered }}
+          dangerouslySetInnerHTML={{ __html: sanitized }}
           className="nreader-content"
         />
       </div>

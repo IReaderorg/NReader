@@ -9,6 +9,7 @@ interface TtsStore {
   voices: TtsVoice[]
   selectedVoice: string | null
   speed: number
+  pitch: number
   text: string
   charIndex: number
 
@@ -18,6 +19,7 @@ interface TtsStore {
   resume: () => void
   stop: () => void
   setSpeed: (speed: number) => void
+  setPitch: (pitch: number) => void
   setVoice: (voiceId: string) => void
   loadVoices: () => Promise<void>
 }
@@ -29,6 +31,7 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
   voices: [],
   selectedVoice: null,
   speed: 1,
+  pitch: 1,
   text: '',
   charIndex: 0,
 
@@ -38,9 +41,9 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
 
     let engine: TtsEngine
     if (type === 'web-speech') {
-      engine = new WebSpeechEngine({ speed: get().speed })
+      engine = new WebSpeechEngine({ speed: get().speed, pitch: get().pitch })
     } else {
-      engine = new WebSpeechEngine({ speed: get().speed })
+      engine = new WebSpeechEngine({ speed: get().speed, pitch: get().pitch })
     }
 
     engine.on('statechange', (state) => set({ state }))
@@ -64,6 +67,10 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
   setSpeed: (speed: number) => {
     get().engine?.setSpeed(speed)
     set({ speed })
+  },
+  setPitch: (pitch: number) => {
+    get().engine?.setPitch(pitch)
+    set({ pitch })
   },
   setVoice: (voiceId: string) => {
     get().engine?.setVoice(voiceId)

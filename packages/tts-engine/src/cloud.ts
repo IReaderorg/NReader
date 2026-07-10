@@ -212,6 +212,7 @@ export class CloudTTSEngine implements TtsEngine {
 
   setVoice(voiceId: string): void { this._voice = voiceId; }
   setSpeed(speed: number): void { this._speed = speed; }
+  setPitch(_pitch: number): void { /* Cloud engines handle pitch via voice/profile settings */ }
 
   async getVoices(): Promise<TtsVoice[]> {
     if (this.provider === 'elevenlabs') {

@@ -32,6 +32,8 @@ const SecuritySettingsPage = React.lazy(() => import('./pages/SecuritySettingsPa
 const NetworkSettingsPage = React.lazy(() => import('./pages/NetworkSettingsPage').then(m => ({ default: m.NetworkSettingsPage })))
 const AdvancedSettingsPage = React.lazy(() => import('./pages/AdvancedSettingsPage').then(m => ({ default: m.AdvancedSettingsPage })))
 const AboutPage = React.lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })))
+const ReadingStatsPage = React.lazy(() => import('./pages/ReadingStatsPage').then(m => ({ default: m.ReadingStatsPage })))
+const StreaksDetailPage = React.lazy(() => import('./pages/StreaksPage').then(m => ({ default: m.StreaksDetailPage })))
 
 function PageLoader() {
   return (
@@ -77,6 +79,8 @@ export function App() {
               <Route path="/backup" element={<BackupPage />} />
               <Route path="/plugins" element={<PluginManagerPage />} />
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/stats" element={<ReadingStatsPage />} />
+              <Route path="/stats/streaks" element={<StreaksDetailPage />} />
             </Route>
           </Routes>
           </Suspense>

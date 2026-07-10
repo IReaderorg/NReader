@@ -3,6 +3,9 @@ import path from 'node:path'
 import type { SandboxInstance } from './sandbox/interface.js'
 import { validatePlugin } from './validator.js'
 import { isIReaderSource, createIReaderAdapter, createJsDependencies } from './ireader-bridge.js'
+import { isTachiyomiSource, createTachiyomiAdapter } from './tachiyomi-bridge.js'
+import { isLNReaderSource, createLNReaderAdapter } from './lnreader-bridge.js'
+import { isJarFile, loadJarSource } from './jar-loader.js'
 import type { IReaderPluginAdapter } from './ireader-bridge.js'
 
 interface PluginWatcherOptions {
@@ -85,13 +88,15 @@ export class PluginLoader {
     const filePath = path.join(this.pluginsDir, filename)
     // Derive the plugin ID from the parent directory name or filename
     const pluginId = filename.includes('/')
-      ? filename.split('/')[0]
+      ? (filename.split('/')[0] ?? filename.replace(/\.js$/i, ''))
       : filename.replace(/\.js$/i, '')
 
     if (!fs.existsSync(filePath)) {
       this.loadedPlugins.delete(filename)
-      this.ireaderAdapters.delete(pluginId!)
-      await this.onUnloaded?.(pluginId!)
+      if (pluginId) {
+        this.ireaderAdapters.delete(pluginId)
+        await this.onUnloaded?.(pluginId)
+      }
       return
     }
 
@@ -108,19 +113,41 @@ export class PluginLoader {
       const pluginExports = mockContext.module.exports || mockContext.exports
       const plugin = (pluginExports as any).default || pluginExports
 
-      // Detect IReader-format source
-      if (isIReaderSource(plugin as Record<string, unknown>)) {
-        // Wrap IReader source through the bridge adapter
-        const deps = createJsDependencies((plugin as any).baseUrl || `https://${pluginId}.local`)
-        const adapter = createIReaderAdapter(plugin as any, deps)
-        this.ireaderAdapters.set(adapter.info.id, adapter)
+      // Auto-detect source format: IReader → Tachiyomi → LNReader
+      let detectedAdapter: IReaderPluginAdapter | null = null
+      const pluginObj = plugin as Record<string, unknown>
 
-        // Load as standard plugin anyway (for sandbox access)
-        await this.sandbox.load(adapter.info.id, code)
-        this.loadedPlugins.set(filename, adapter.info.id)
-        await this.onLoaded?.(adapter.info.id)
-        await this.onIReaderLoaded?.(adapter.info.id, adapter)
+      if (isIReaderSource(pluginObj)) {
+        const deps = createJsDependencies((plugin as any).baseUrl || `https://${pluginId}.local`)
+        detectedAdapter = createIReaderAdapter(plugin as any, deps)
+      } else if (isTachiyomiSource(pluginObj)) {
+        const deps = createJsDependencies((plugin as any).baseUrl || `https://${pluginId}.local`)
+        detectedAdapter = createTachiyomiAdapter(plugin as any, deps)
+      } else if (isLNReaderSource(pluginObj)) {
+        const deps = createJsDependencies((plugin as any).baseUrl || `https://${pluginId}.local`)
+        detectedAdapter = createLNReaderAdapter(plugin as any, deps)
+      }
+
+      if (detectedAdapter) {
+        this.ireaderAdapters.set(detectedAdapter.info.id, detectedAdapter)
+        await this.sandbox.load(detectedAdapter.info.id, code)
+        this.loadedPlugins.set(filename, detectedAdapter.info.id)
+        await this.onLoaded?.(detectedAdapter.info.id)
+        await this.onIReaderLoaded?.(detectedAdapter.info.id, detectedAdapter)
         return
+      }
+
+      // Also try JAR files (already extracted to JS code)
+      if (isJarFile(filePath)) {
+        const jarAdapter = await loadJarSource(filePath)
+        if (jarAdapter) {
+          this.ireaderAdapters.set(jarAdapter.info.id, jarAdapter)
+          await this.sandbox.load(jarAdapter.info.id, code)
+          this.loadedPlugins.set(filename, jarAdapter.info.id)
+          await this.onLoaded?.(jarAdapter.info.id)
+          await this.onIReaderLoaded?.(jarAdapter.info.id, jarAdapter)
+          return
+        }
       }
 
       // Standard validation for native plugins

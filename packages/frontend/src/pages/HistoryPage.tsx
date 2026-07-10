@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useHistoryStore } from '../store/history-store'
 import { api } from '../api/client'
-import { History, Clock, ChevronRight, Trash2, Search, BookOpen } from 'lucide-react'
+import { History, Clock, ChevronRight, Trash2, Search, BookOpen, Mic } from 'lucide-react'
 
 export function HistoryPage() {
   const { entries, loading, error, fetchHistory, clearMangaHistory } = useHistoryStore()
@@ -67,8 +67,11 @@ export function HistoryPage() {
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           placeholder="Search by manga title…"
-          className="w-full bg-surface border border-border-light rounded-xl pl-9 pr-3 py-2.5 text-xs text-text outline-none focus:border-accent/50 transition-colors placeholder:text-text-muted/50"
+          className="w-full bg-surface border border-border-light rounded-xl pl-9 pr-10 py-2.5 text-xs text-text outline-none focus:border-accent/50 transition-colors placeholder:text-text-muted/50"
         />
+        <button className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors">
+          <Mic className="w-3.5 h-3.5" strokeWidth={1.5} />
+        </button>
       </div>
 
       {continueReading.length > 0 && (
@@ -85,18 +88,18 @@ export function HistoryPage() {
                 <Link
                   key={`${entry.mangaId}-${entry.chapterId}`}
                   to={`/reader/${entry.sourceId}/${encodeURIComponent(entry.mangaId)}/${encodeURIComponent(entry.chapterId)}`}
-                  className="flex-shrink-0 w-36 p-3 rounded-xl bg-surface border border-border-light hover:bg-surface-hover transition-colors"
+                  className="flex-shrink-0 w-40 p-3 rounded-xl bg-surface border border-border-light hover:bg-surface-hover hover:shadow-medium transition-all"
                 >
-                  <div className="w-full h-20 rounded-lg overflow-hidden bg-surface mb-2 ring-1 ring-border-light/50">
+                  <div className="w-full h-24 rounded-lg overflow-hidden bg-surface mb-2 ring-1 ring-border-light/50 relative">
                     {lib?.coverUrl ? (
                       <img src={lib.coverUrl} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                     ) : null}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
+                      <div className="h-full bg-accent rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
                   </div>
                   <p className="text-[11px] font-medium text-text truncate">{lib?.title || entry.mangaId}</p>
                   <p className="text-[10px] text-text-muted mt-0.5">Ch. {entry.chapterNumber}{entry.chapterTitle ? ` — ${entry.chapterTitle}` : ''}</p>
-                  <div className="mt-1.5 w-full bg-surface-hover rounded-full h-1">
-                    <div className="bg-accent h-1 rounded-full" style={{ width: `${pct}%` }} />
-                  </div>
                 </Link>
               )
             })}
@@ -189,13 +192,15 @@ function groupByDate<T extends { readAt: string }>(entries: T[]): Record<string,
   const groups: Record<string, typeof entries> = {}
   const today = new Date().toDateString()
   const yesterday = new Date(Date.now() - 86400000).toDateString()
+  const weekAgo = new Date(Date.now() - 604800000).toDateString()
 
   for (const entry of entries) {
     const date = new Date(entry.readAt).toDateString()
     let label: string
     if (date === today) label = 'Today'
     else if (date === yesterday) label = 'Yesterday'
-    else label = new Date(entry.readAt).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
+    else if (new Date(entry.readAt).getTime() > new Date(weekAgo).getTime()) label = 'This Week'
+    else label = 'Earlier'
 
     if (!groups[label]) groups[label] = []
     groups[label]!.push(entry)

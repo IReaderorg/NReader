@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { HistoryRepository, HistoryEntry } from '@ireader/core'
+import { ValidationError } from '@ireader/core'
 import { randomUUID } from 'node:crypto'
 
 export function createHistoryRouter(repo: HistoryRepository): Hono {
@@ -57,7 +58,7 @@ export function createHistoryRouter(repo: HistoryRepository): Hono {
       scrollPosition: number
     }>()
     if (!body.mangaId || !body.sourceId || !body.chapterId) {
-      return c.json({ error: 'mangaId, sourceId, and chapterId are required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+      throw new ValidationError('mangaId, sourceId, and chapterId are required')
     }
     const entry: HistoryEntry = {
       id: randomUUID(),

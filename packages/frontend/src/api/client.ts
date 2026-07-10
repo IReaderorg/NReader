@@ -54,6 +54,17 @@ export interface GlossaryEntry {
   createdAt: string; updatedAt: string
 }
 
+export interface CharacterArt {
+  id: string
+  mangaId: string
+  userId?: string
+  imageUrl: string
+  caption?: string
+  artist?: string
+  source?: string
+  createdAt: string
+}
+
 export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     headers: { 'Content-Type': 'application/json' },
@@ -215,6 +226,28 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ zipBase64, strategy: strategy ?? 'merge', sections }),
     }),
+  // LNReader import/export
+  importLNReaderBackup: (json: string, strategy?: 'merge' | 'replace') =>
+    apiFetch<{ tables?: string[]; entries?: number; entryCount?: number }>('/backup/lnreader/import', {
+      method: 'POST',
+      body: JSON.stringify({ json, strategy: strategy ?? 'merge' }),
+    }),
+  exportLNReaderBackup: async (): Promise<Blob> => {
+    const res = await fetch(`${BASE}/backup/lnreader/export`, { method: 'POST' })
+    if (!res.ok) throw new Error('LNReader export failed')
+    return res.blob()
+  },
+  // Encryption
+  encryptBackup: (dataBase64: string, password: string) =>
+    apiFetch<{ encryptedBase64: string }>('/backup/encrypt', {
+      method: 'POST',
+      body: JSON.stringify({ dataBase64, password }),
+    }),
+  decryptBackup: (dataBase64: string, password: string) =>
+    apiFetch<{ decryptedBase64: string }>('/backup/decrypt', {
+      method: 'POST',
+      body: JSON.stringify({ dataBase64, password }),
+    }),
   listBackups: () =>
     apiFetch<Array<{ id: string; filename: string; size: number; createdAt: string; modifiedAt: string }>>('/backup'),
   downloadBackup: async (id: string): Promise<Blob> => {
@@ -340,8 +373,37 @@ export const api = {
     })
   },
 
+  // Cloud Backup (Google Drive)
+  cloudBackup: {
+    getAuthUrl: () => apiFetch<{ url: string }>('/backup/cloud/auth-url'),
+    handleCallback: (code: string) => apiFetch<{ success: boolean; email?: string }>('/backup/cloud/callback', { method: 'POST', body: JSON.stringify({ code }) }),
+    status: () => apiFetch<{ connected: boolean; email?: string }>('/backup/cloud/status'),
+    upload: async (file: File): Promise<{ id: string; name: string }> => {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch(`${BASE}/backup/cloud/upload`, { method: 'POST', body: form })
+      if (!res.ok) throw new Error('Upload failed')
+      return res.json()
+    },
+    list: () => apiFetch<Array<{ id: string; name: string; size: string; createdTime: string; modifiedTime: string }>>('/backup/cloud/list'),
+    download: async (id: string): Promise<Blob> => {
+      const res = await fetch(`${BASE}/backup/cloud/download/${encodeURIComponent(id)}`)
+      if (!res.ok) throw new Error('Download failed')
+      return res.blob()
+    },
+    deleteFile: (id: string) => apiFetch<{ success: boolean }>(`/backup/cloud/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    revoke: () => apiFetch<{ success: boolean }>('/backup/cloud/revoke', { method: 'POST' }),
+  },
+
   // Stats
   getStats: () => apiFetch<{ totalBooks: number; totalChapters: number; totalDownloads: number; storageUsedBytes: number }>('/stats'),
+
+  // Character Art
+  getCharacterArt: (mangaId: string) => apiFetch<CharacterArt[]>(`/character-art?mangaId=${enc(mangaId)}`),
+  uploadCharacterArt: (data: { mangaId: string; imageUrl: string; caption?: string; artist?: string }) =>
+    apiFetch<CharacterArt>('/character-art', { method: 'POST', body: JSON.stringify(data) }),
+  deleteCharacterArt: (id: string) =>
+    apiFetch<{ success: boolean }>(`/character-art/${id}`, { method: 'DELETE' }),
 
   // Reading Presets
   getPresets: () => apiFetch<Array<{ id: string; name: string; fontSize: number; lineHeight: number; paragraphSpacing: number; paragraphIndent: number; textAlignment: string; colorFilter: string }>>('/reader/presets'),

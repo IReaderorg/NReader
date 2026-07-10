@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { DownloadRepository, DownloadJob, DownloadStatus } from '@ireader/core'
+import { NotFoundError, ValidationError } from '@ireader/core'
 import { randomUUID } from 'node:crypto'
 import { wsManager } from '../ws/ws-manager.js'
 
@@ -37,7 +38,7 @@ export function createDownloadsRouter(repo: DownloadRepository): Hono {
   app.get('/:id', async (c) => {
     const { id } = c.req.param()
     const job = await repo.getById(id)
-    if (!job) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    if (!job) throw new NotFoundError('Download job')
     return c.json(job)
   })
 
@@ -53,7 +54,7 @@ export function createDownloadsRouter(repo: DownloadRepository): Hono {
       priority?: number
     }>()
     if (!body.sourceId || !body.mangaId || !body.chapterId) {
-      return c.json({ error: 'sourceId, mangaId, and chapterId are required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+      throw new ValidationError('sourceId, mangaId, and chapterId are required')
     }
     const job: DownloadJob = {
       id: randomUUID(),
@@ -86,7 +87,7 @@ export function createDownloadsRouter(repo: DownloadRepository): Hono {
       chapters: DownloadQueueItem[]
     }>()
     if (!body.sourceId || !body.mangaId || !body.chapters?.length) {
-      return c.json({ error: 'sourceId, mangaId, and chapters[] are required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+      throw new ValidationError('sourceId, mangaId, and chapters[] are required')
     }
     const now = new Date().toISOString()
     const jobs: DownloadJob[] = body.chapters.map((ch, i) => ({
@@ -124,7 +125,7 @@ export function createDownloadsRouter(repo: DownloadRepository): Hono {
       chapters: Array<{ chapterId: string; chapterNumber: number; chapterTitle?: string; read: boolean }>
     }>()
     if (!body.sourceId || !body.mangaId || !body.chapters?.length) {
-      return c.json({ error: 'sourceId, mangaId, and chapters[] are required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+      throw new ValidationError('sourceId, mangaId, and chapters[] are required')
     }
     const unread = body.chapters.filter(ch => !ch.read)
     if (unread.length === 0) {
@@ -161,9 +162,9 @@ export function createDownloadsRouter(repo: DownloadRepository): Hono {
   app.post('/:id/pause', async (c) => {
     const { id } = c.req.param()
     const job = await repo.getById(id)
-    if (!job) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    if (!job) throw new NotFoundError('Download job')
     if (job.status !== 'downloading' && job.status !== 'queued') {
-      return c.json({ error: 'Can only pause queued or downloading jobs', code: 'VALIDATION_ERROR', status: 400 }, 400)
+      throw new ValidationError('Can only pause queued or downloading jobs')
     }
     await repo.update({ id, status: 'paused' })
     wsManager.broadcast('downloads', 'paused', { id })
@@ -174,9 +175,9 @@ export function createDownloadsRouter(repo: DownloadRepository): Hono {
   app.post('/:id/resume', async (c) => {
     const { id } = c.req.param()
     const job = await repo.getById(id)
-    if (!job) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    if (!job) throw new NotFoundError('Download job')
     if (job.status !== 'paused') {
-      return c.json({ error: 'Can only resume paused downloads', code: 'VALIDATION_ERROR', status: 400 }, 400)
+      throw new ValidationError('Can only resume paused downloads')
     }
     await repo.update({ id, status: 'queued' })
     wsManager.broadcast('downloads', 'resumed', { id })
@@ -216,7 +217,7 @@ export function createDownloadsRouter(repo: DownloadRepository): Hono {
   app.post('/:id/cancel', async (c) => {
     const { id } = c.req.param()
     const job = await repo.getById(id)
-    if (!job) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    if (!job) throw new NotFoundError('Download job')
     await repo.update({ id, status: 'cancelled', completedAt: new Date().toISOString() })
     wsManager.broadcast('downloads', 'cancelled', { id })
     return c.json({ success: true })
@@ -226,13 +227,13 @@ export function createDownloadsRouter(repo: DownloadRepository): Hono {
   app.post('/:id/retry', async (c) => {
     const { id } = c.req.param()
     const job = await repo.getById(id)
-    if (!job) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    if (!job) throw new NotFoundError('Download job')
     if (job.status !== 'failed') {
-      return c.json({ error: 'Can only retry failed downloads', code: 'VALIDATION_ERROR', status: 400 }, 400)
+      throw new ValidationError('Can only retry failed downloads')
     }
     const retryCount = job.retryCount + 1
     if (retryCount > job.maxRetries) {
-      return c.json({ error: 'Max retries exceeded', code: 'MAX_RETRIES', status: 400 }, 400)
+      throw new ValidationError('Max retries exceeded')
     }
     await repo.update({ id, status: 'queued', progress: 0, bytesDownloaded: 0, error: undefined, retryCount })
     const updated = await repo.getById(id)
@@ -246,7 +247,7 @@ export function createDownloadsRouter(repo: DownloadRepository): Hono {
     const { id } = c.req.param()
     const body = await c.req.json<{ priority: number }>()
     const job = await repo.getById(id)
-    if (!job) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    if (!job) throw new NotFoundError('Download job')
     await repo.update({ id, priority: body.priority })
     wsManager.broadcast('downloads', 'priority', { id, priority: body.priority })
     return c.json({ success: true })
@@ -256,7 +257,7 @@ export function createDownloadsRouter(repo: DownloadRepository): Hono {
   app.post('/queue/reorder', async (c) => {
     const body = await c.req.json<{ ids: string[] }>()
     if (!body.ids?.length) {
-      return c.json({ error: 'ids[] is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+      throw new ValidationError('ids[] is required')
     }
     await repo.updateQueueOrder(body.ids)
     wsManager.broadcast('downloads', 'reordered', { ids: body.ids })
@@ -285,7 +286,7 @@ export function createDownloadsRouter(repo: DownloadRepository): Hono {
   app.post('/delete-chapter', async (c) => {
     const body = await c.req.json<{ chapterId: string }>()
     if (!body.chapterId) {
-      return c.json({ error: 'chapterId is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+      throw new ValidationError('chapterId is required')
     }
     await repo.removeByChapter(body.chapterId)
     return c.json({ success: true })
@@ -295,7 +296,7 @@ export function createDownloadsRouter(repo: DownloadRepository): Hono {
   app.post('/delete-manga', async (c) => {
     const body = await c.req.json<{ mangaId: string }>()
     if (!body.mangaId) {
-      return c.json({ error: 'mangaId is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+      throw new ValidationError('mangaId is required')
     }
     await repo.removeByManga(body.mangaId)
     return c.json({ success: true })

@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
-import type { LibraryRepository, LibraryEntry, Category } from '@ireader/core'
+import type { LibraryRepository, Category, LibraryEntry } from '@ireader/core'
+import { NotFoundError, ValidationError } from '@ireader/core'
 import { randomUUID } from 'node:crypto'
 
 export function createLibraryRouter(repo: LibraryRepository): Hono {
@@ -16,7 +17,7 @@ export function createLibraryRouter(repo: LibraryRepository): Hono {
   app.post('/categories', async (c) => {
     const body = await c.req.json<{ name: string; color?: string }>()
     if (!body.name) {
-      return c.json({ error: 'name is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+      throw new ValidationError('name is required')
     }
     const category: Category = {
       id: randomUUID(),
@@ -71,7 +72,7 @@ export function createLibraryRouter(repo: LibraryRepository): Hono {
       categoryId?: string
     }>()
     if (!body.sourceId || !body.mangaId || !body.title) {
-      return c.json({ error: 'sourceId, mangaId, and title are required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+      throw new ValidationError('sourceId, mangaId, and title are required')
     }
     const entry: LibraryEntry = {
       id: randomUUID(),
@@ -98,7 +99,7 @@ export function createLibraryRouter(repo: LibraryRepository): Hono {
   app.get('/:id', async (c) => {
     const { id } = c.req.param()
     const entry = await repo.getById(id)
-    if (!entry) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    if (!entry) throw new NotFoundError('Library entry')
     return c.json(entry)
   })
 
@@ -106,7 +107,7 @@ export function createLibraryRouter(repo: LibraryRepository): Hono {
   app.put('/:id', async (c) => {
     const { id } = c.req.param()
     const existing = await repo.getById(id)
-    if (!existing) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    if (!existing) throw new NotFoundError('Library entry')
 
     const body = await c.req.json<Partial<LibraryEntry>>()
     await repo.update({ id, ...body, dateUpdated: new Date().toISOString() })
@@ -120,7 +121,7 @@ export function createLibraryRouter(repo: LibraryRepository): Hono {
   app.patch('/:id/categories', async (c) => {
     const { id } = c.req.param()
     const existing = await repo.getById(id)
-    if (!existing) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    if (!existing) throw new NotFoundError('Library entry')
     const body = await c.req.json<{ categoryIds: string[] }>()
     await repo.update({ id, categoryIds: body.categoryIds, dateUpdated: new Date().toISOString() })
     return c.json(await repo.getById(id))
@@ -130,7 +131,7 @@ export function createLibraryRouter(repo: LibraryRepository): Hono {
   app.patch('/:id/favorite', async (c) => {
     const { id } = c.req.param()
     const existing = await repo.getById(id)
-    if (!existing) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    if (!existing) throw new NotFoundError('Library entry')
     const body = await c.req.json<{ favorited: boolean }>()
     await repo.update({ id, favorited: body.favorited, dateUpdated: new Date().toISOString() })
     return c.json(await repo.getById(id))
@@ -140,7 +141,7 @@ export function createLibraryRouter(repo: LibraryRepository): Hono {
   app.patch('/:id/metadata', async (c) => {
     const { id } = c.req.param()
     const existing = await repo.getById(id)
-    if (!existing) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    if (!existing) throw new NotFoundError('Library entry')
     const body = await c.req.json<{ title?: string; author?: string; description?: string; coverUrl?: string }>()
     await repo.update({ id, ...body, dateUpdated: new Date().toISOString() })
     return c.json(await repo.getById(id))
@@ -150,7 +151,7 @@ export function createLibraryRouter(repo: LibraryRepository): Hono {
   app.post('/:id/mark-all-read', async (c) => {
     const { id } = c.req.param()
     const existing = await repo.getById(id)
-    if (!existing) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    if (!existing) throw new NotFoundError('Library entry')
     const total = existing.totalChapters ?? 0
     await repo.update({ id, chaptersRead: total, dateUpdated: new Date().toISOString() })
     return c.json({ success: true })
@@ -160,7 +161,7 @@ export function createLibraryRouter(repo: LibraryRepository): Hono {
   app.patch('/:id/archive', async (c) => {
     const { id } = c.req.param()
     const existing = await repo.getById(id)
-    if (!existing) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    if (!existing) throw new NotFoundError('Library entry')
     const body = await c.req.json<{ archived: boolean }>()
     await repo.update({ id, archived: body.archived, dateUpdated: new Date().toISOString() })
     return c.json(await repo.getById(id))

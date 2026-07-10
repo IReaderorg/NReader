@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-  /* "Immersive Gallery" — warm dark, NOT Material */
+  /* Novel-first reading experience */
   :root {
     --bg: 240 4% 6%;
     --surface: 240 3% 10%;
@@ -16,13 +16,17 @@
     --accent-soft: 38 92% 50% / 0.15;
     --accent2: 330 80% 60%;
     --danger: 0 78% 55%;
-    --radius-sm: 0.5rem;
-    --radius-md: 0.75rem;
-    --radius-lg: 1rem;
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
     --sidebar-w: 60px;
     --pill-h: 56px;
     --header-h: 48px;
     --wrap: 1024px;
+    --font-body: 'Georgia', 'Literata', serif;
+    --font-ui: 'Inter', system-ui, sans-serif;
+    --shadow-soft: 0 2px 16px rgba(0,0,0,0.06);
+    --shadow-medium: 0 4px 24px rgba(0,0,0,0.10);
   }
 
   .light {
@@ -54,9 +58,27 @@ html {
 body {
   background: hsl(var(--bg));
   color: hsl(var(--text));
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+/* Paper texture for reader background */
+.paper-texture {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.015) 2px,
+      rgba(0,0,0,0.015) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.01) 2px,
+      rgba(0,0,0,0.01) 4px
+    );
 }
 ::selection {
   background: hsl(var(--accent) / 0.3);
@@ -70,6 +92,22 @@ body {
   border-radius: 0.25rem;
   transition: background 0.15s ease;
   scroll-margin-block: 30vh;
+}
+
+/* ── Thin reader progress bar ── */
+.reader-progress {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 45;
+  background: hsl(var(--border-light));
+}
+.reader-progress-fill {
+  height: 100%;
+  background: hsl(var(--accent));
+  transition: width 0.3s ease;
 }
 
 /* ── Layout Helpers ── */

@@ -10,8 +10,8 @@ interface VmContext {
 }
 
 export class NodeVmSandbox implements SandboxAdapter {
-  name = 'node-vm' as const
-  private contexts = new Map<string, VmContext>()
+  readonly type = 'node-vm' as const
+  readonly name = 'NodeVM Sandbox'
 
   isAvailable(): boolean {
     return typeof vm.Script === 'function'
@@ -25,13 +25,9 @@ export class NodeVmSandbox implements SandboxAdapter {
 class NodeVmInstance implements SandboxInstance {
   private contexts = new Map<string, VmContext>()
   private timeout: number
-  private allowedDomains: string[]
-  private resolveDir: string
-
   constructor(options: SandboxOptions) {
     this.timeout = options.timeout ?? 30_000
-    this.allowedDomains = options.allowedDomains ?? []
-    this.resolveDir = options.resolveDir ?? process.cwd()
+    void options.allowedDomains
   }
 
   async load(pluginId: string, code: string): Promise<void> {
@@ -42,14 +38,14 @@ class NodeVmInstance implements SandboxInstance {
 
     const script = new vm.Script(wrappedCode, {
       filename: `${pluginId}.js`,
-      timeout: this.timeout,
-    })
+    } as vm.ScriptOptions)
 
-    script.runInContext(context, { timeout: this.timeout })
+    script.runInContext(context, { timeout: this.timeout } as vm.RunningScriptOptions)
 
+    const sandboxObj = sandbox as { module?: { exports: Record<string, unknown> } }
     this.contexts.set(pluginId, {
       pluginId,
-      exports: sandbox.module?.exports ?? {},
+      exports: sandboxObj.module?.exports ?? {},
       sandbox: sandbox,
       script,
     })
@@ -79,8 +75,7 @@ class NodeVmInstance implements SandboxInstance {
 
     const execScript = new vm.Script(execCode, {
       filename: `${pluginId}.${method}.js`,
-      timeout: this.timeout,
-    })
+    } as vm.ScriptOptions)
 
     // Use the original sandbox context (not a fresh one) so the plugin's own
     // references to fetch/parseHTML/setTimeout still work
@@ -121,16 +116,5 @@ class NodeVmInstance implements SandboxInstance {
       parseInt, parseFloat, isNaN, encodeURI, decodeURI, encodeURIComponent, decodeURIComponent,
       URL, URLSearchParams,
     }
-  }
-}
-
-function createScopedFetch(baseUrl: string, allowedDomains: string[]): typeof globalThis.fetch {
-  const allowed = [new URL(baseUrl).hostname, ...allowedDomains]
-  return async function scopedFetch(url: string, options?: RequestInit): Promise<Response> {
-    const reqUrl = new URL(url, baseUrl)
-    if (!allowed.some(d => reqUrl.hostname === d || reqUrl.hostname.endsWith('.' + d))) {
-      throw new Error(`fetch() to ${reqUrl.hostname} not allowed (scoped to ${allowed.join(', ')})`)
-    }
-    return globalThis.fetch(reqUrl.toString(), options)
   }
 }

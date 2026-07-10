@@ -435,7 +435,42 @@ export function ReaderPage() {
     }
   }, [])
 
-  // --- Keyboard shortcuts ---
+  // --- Auto-hide bars on idle (3s) ---
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const resetIdleTimer = useCallback(() => {
+    if (!immersiveMode) return
+    setBarsVisible(true)
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+    idleTimerRef.current = setTimeout(() => {
+      if (!settingsSheetVisible && !findVisible && !chapterDrawerVisible && !reportDialogVisible) {
+        setBarsVisible(false)
+      }
+    }, 3000)
+  }, [immersiveMode, settingsSheetVisible, findVisible, chapterDrawerVisible, reportDialogVisible])
+
+  useEffect(() => {
+    if (!immersiveMode) {
+      setBarsVisible(true)
+      return
+    }
+    const handlers = ['mousemove', 'touchstart', 'scroll', 'keydown'] as const
+    const onActivity = () => resetIdleTimer()
+    handlers.forEach(h => window.addEventListener(h, onActivity))
+    resetIdleTimer()
+    return () => {
+      handlers.forEach(h => window.removeEventListener(h, onActivity))
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+    }
+  }, [immersiveMode, resetIdleTimer])
+
+  // --- Tap zones for prev/next chapter ---
+  const handleTapZone = useCallback((direction: 'left' | 'right') => {
+    if (direction === 'left' && currentChapterIndex > 0) {
+      loadChapter(currentChapterIndex - 1)
+    } else if (direction === 'right' && currentChapterIndex < chapters.length - 1) {
+      loadChapter(currentChapterIndex + 1)
+    }
+  }, [currentChapterIndex, chapters.length, loadChapter])
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return
@@ -735,35 +770,36 @@ export function ReaderPage() {
         <div className="absolute inset-0 z-20 cursor-pointer" onClick={toggleBars} onDoubleClick={toggleBars} />
       )}
 
+      {/* --- Thin progress line (always visible) --- */}
+      <div className="reader-progress">
+        <div className="reader-progress-fill" style={{ width: `${Math.round(progress * 100)}%` }} />
+      </div>
+
+      {/* --- Tap zones for prev/next chapter (hidden when bars visible) --- */}
+      {!barsVisible && (
+        <>
+          <div
+            className="fixed left-0 top-0 bottom-0 w-1/3 z-25 cursor-pointer"
+            onClick={() => handleTapZone('left')}
+          />
+          <div
+            className="fixed right-0 top-0 bottom-0 w-1/3 z-25 cursor-pointer"
+            onClick={() => handleTapZone('right')}
+          />
+        </>
+      )}
+
+      {/* Tap anywhere else to toggle bars (when not in tap zone) */}
+      {mode !== 'pager' && (
+        <div className="absolute inset-0 z-20 cursor-pointer" onClick={toggleBars} onDoubleClick={toggleBars} />
+      )}
+
       {/* --- Top Bar --- */}
       <ReaderTopBar
         title={chapterDisplayTitle}
         onBack={() => navigate(-1)}
-        onRefresh={() => fetchChaptersList()}
-        onRefreshRemote={() => {
-          if (sourceId && chapterId) {
-            api.getPages(sourceId, chapterId).then(setPages).catch(() => {})
-          }
-        }}
-        onBookmark={async () => {
-          if (chapterId) {
-            try {
-              const res = await api.toggleBookmark(chapterId)
-              setBookmarked(res.bookmarked)
-            } catch { /* ignore */ }
-          }
-        }}
-        onFindInChapter={() => {
-          setFindVisible(true)
-          setBarsVisible(true)
-        }}
-        onReport={() => {
-          setReportDialogVisible(true)
-          setBarsVisible(true)
-        }}
-        isBookmarked={isBookmarked}
+        onSettings={() => { setSettingsSheetVisible(true); setBarsVisible(false) }}
         visible={barsVisible && !settingsSheetVisible}
-        isLoaded={!loading}
       />
 
       {/* --- Find in Chapter Bar --- */}
@@ -859,15 +895,12 @@ export function ReaderPage() {
       <ReaderBottomBar
         chapters={chapters}
         currentChapterIndex={currentChapterIndex}
-        currentChapterTitle={currentChapter?.title || chapterTitle || ''}
         onPrev={() => currentChapterIndex > 0 && loadChapter(currentChapterIndex - 1)}
         onNext={() => currentChapterIndex < chapters.length - 1 && loadChapter(currentChapterIndex + 1)}
         onChapterSelect={handleChapterSelect}
-        onTtsToggle={handleTtsToggle}
         onSettings={() => { setSettingsSheetVisible(true); setBarsVisible(false) }}
-        onMenuOpen={() => { setChapterDrawerVisible(true); setBarsVisible(false) }}
         visible={barsVisible && !settingsSheetVisible}
-        ttsActive={ttsState !== 'idle'}
+        progress={progress * 100}
       />
 
       {/* --- Report Broken Chapter Dialog --- */}

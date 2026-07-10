@@ -190,13 +190,17 @@ export function LibraryPage() {
         </div>
         <div className="flex items-center gap-2">
           {/* Search toggle */}
-          <button
-            onClick={() => searchRef.current?.focus()}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-surface transition-colors"
-            title="Search"
-          >
-            <Search className="w-4 h-4" strokeWidth={1.5} />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => searchRef.current?.focus()}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-surface transition-colors"
+              title="Search"
+            >
+              <Search className="w-4 h-4" strokeWidth={1.5} />
+            </button>
+            {/* Voice search icon indicator */}
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent/60" />
+          </div>
           {/* Sort */}
           <div className="relative">
             <button
@@ -502,6 +506,12 @@ export function LibraryPage() {
                       (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3 4"><rect fill="%2318181a" width="3" height="4"/><text x="1.5" y="2" text-anchor="middle" fill="%23666" font-size="0.3">?</text></svg>'
                     }}
                   />
+                  {/* Title overlay at bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2 pt-6">
+                    <h3 className="text-xs font-medium leading-tight text-white drop-shadow-sm line-clamp-2">
+                      {entry.title}
+                    </h3>
+                  </div>
                   {/* Progress bar */}
                   {entry.chaptersRead > 0 && entry.totalChapters && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-surface">
@@ -528,9 +538,6 @@ export function LibraryPage() {
                     </div>
                   )}
                 </div>
-                <h3 className="mt-1.5 text-xs font-medium leading-tight line-clamp-2 text-text-secondary group-hover:text-text transition-colors">
-                  {entry.title}
-                </h3>
               </Link>
               {/* Quick actions (non-selection mode) */}
               {!selectionMode && (

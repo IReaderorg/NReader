@@ -1,8 +1,9 @@
+export type SandboxType = 'node-vm' | 'web-worker' | 'webview-v8' | 'mock'
+
 export interface SandboxOptions {
   timeout?: number
   memoryLimit?: number
   allowedDomains?: string[]
-  resolveDir?: string
 }
 
 export interface SandboxInstance {
@@ -12,7 +13,8 @@ export interface SandboxInstance {
 }
 
 export interface SandboxAdapter {
-  name: string
+  readonly type: SandboxType
+  readonly name: string
   isAvailable(): boolean
   create(options: SandboxOptions): Promise<SandboxInstance>
 }

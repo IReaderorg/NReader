@@ -18,7 +18,8 @@
     "@ireader/storage": "workspace:*",
     "hono": "^4.6.0",
     "jszip": "^3.10.1",
-    "linkedom": "^0.18.13"
+    "linkedom": "^0.18.13",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

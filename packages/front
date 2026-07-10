@@ -1,0 +1,650 @@
+import { useState, useEffect, useCallback } from 'react'
+import {
+  X, Sun, Moon, Upload, Trash2,
+  AlignLeft, AlignCenter, AlignRight, AlignJustify,
+  BookOpen, Layout, Play, Square, Filter,
+  Type, Palette, Settings, Loader2, ArrowLeftRight,
+} from 'lucide-react'
+import type { ReaderMode, TextAlignment, ColorFilterType, FontEntry } from '../store/reader-store'
+import { useReaderStore } from '../store/reader-store'
+import { useScrollLock } from '../hooks/useScrollLock'
+import { ContentFilterEditor } from './ContentFilterEditor'
+import { api } from '../api/client'
+
+// ─── Presets ────────────────────────────────────────────────────────────
+
+interface ReaderPreset {
+  id: string
+  name: string
+  description?: string
+  fontSize: number
+  lineHeight: number
+  paragraphSpacing: number
+  paragraphIndent: number
+  textAlignment: TextAlignment
+  colorFilter: ColorFilterType
+}
+
+// ─── Theme backgrounds (matching IReader preset colors) ──────────────────
+
+const BG_THEMES = [
+  { id: 'bg-white', name: 'White', bg: '#FFFFFF', text: '#1a1a2e' },
+  { id: 'bg-cream', name: 'Cream', bg: '#FFF8E7', text: '#3d2b1f' },
+  { id: 'bg-sepia', name: 'Sepia', bg: '#F4ECD8', text: '#5b4636' },
+  { id: 'bg-light-gray', name: 'Light Gray', bg: '#E8E8E8', text: '#1a1a2e' },
+  { id: 'bg-dark', name: 'Dark', bg: '#1a1a2e', text: '#e0e0e0' },
+  { id: 'bg-amoled', name: 'AMOLED', bg: '#000000', text: '#d0d0d0' },
+  { id: 'bg-gray-dark', name: 'Gray Dark', bg: '#2a2a3a', text: '#c8c8c8' },
+  { id: 'bg-navy', name: 'Navy', bg: '#1b2838', text: '#b8c8d8' },
+  { id: 'bg-green', name: 'Green', bg: '#1a3a2a', text: '#c8e0c8' },
+  { id: 'bg-brown', name: 'Brown', bg: '#3d2b1f', text: '#d4c3b3' },
+  { id: 'bg-blue-light', name: 'Blue Light', bg: '#e8f0fe', text: '#1a3a5c' },
+  { id: 'bg-pink', name: 'Soft Pink', bg: '#fce4ec', text: '#4a1a2e' },
+]
+
+// ─── Built-in colors for custom color pickers ───────────────────────────
+
+const PRESET_COLORS = [
+  '#FFFFFF', '#FFF8E7', '#F4ECD8', '#E8E8E8', '#FFE0B2', '#F5F5DC',
+  '#1a1a2e', '#000000', '#2a2a3a', '#1b2838', '#1a3a2a', '#3d2b1f',
+  '#e0e0e0', '#c8c8c8', '#FFCDD2', '#BBDEFB', '#C8E6C9', '#FFE082',
+  '#D1C4E9', '#B2DFDB', '#F8BBD0', '#B3E5FC', '#DCEDC8', '#FFECB3',
+]
+
+// ─── Props ──────────────────────────────────────────────────────────────
+
+interface ReaderSettingsSheetProps {
+  visible: boolean
+  onClose: () => void
+  availableThemes?: { id: string; name: string; colors: Record<string, string> }[]
+}
+
+// ─── Sub-components ─────────────────────────────────────────────────────
+
+type TabKey = 'reader' | 'general' | 'colors' | 'fonts'
+const TABS: { key: TabKey; label: string; icon: typeof Settings }[] = [
+  { key: 'reader', label: 'Reader', icon: BookOpen },
+  { key: 'general', label: 'General', icon: Settings },
+  { key: 'colors', label: 'Colors', icon: Palette },
+  { key: 'fonts', label: 'Fonts', icon: Type },
+]
+
+export function ReaderSettingsSheet({ visible, onClose, availableThemes = [] }: ReaderSettingsSheetProps) {
+  const [activeTab, setActiveTab] = useState<TabKey>('reader')
+  const [touchStartX, setTouchStartX] = useState(0)
+  useScrollLock(visible)
+
+  useEffect(() => {
+    if (!visible) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [visible, onClose])
+
+  // Swipe right to close
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0]?.clientX ?? 0)
+  }, [])
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const endX = e.changedTouches[0]?.clientX ?? 0
+    if (endX - touchStartX > 80) onClose()
+  }, [touchStartX, onClose])
+
+  if (!visible) return null
+
+  return (
+    <div className="fixed inset-0 z-[60]">
+      {/* Backdrop blur */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Right sidebar panel */}
+      <div
+        className="absolute right-0 top-0 bottom-0 w-[340px] max-w-[90vw] bg-surface flex flex-col shadow-2xl animate-in slide-in-from-right duration-200"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Handle bar for mobile */}
+        <div className="flex justify-center pt-2 pb-1 md:hidden">
+          <div className="w-10 h-1 rounded-full bg-text-muted/30" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border-light">
+          <h2 className="text-sm font-semibold text-text">Reader Settings</h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-surface-hover transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+
+        {/* Tab Content */}
+        <div className="flex-1 overflow-y-auto">
+          {activeTab === 'reader' && <ReaderTab />}
+          {activeTab === 'general' && <GeneralTab />}
+          {activeTab === 'colors' && <ColorsTab themes={availableThemes} />}
+          {activeTab === 'fonts' && <FontsTab />}
+        </div>
+
+        {/* Safe area */}
+        <div style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />
+      </div>
+    </div>
+  )
+}
+
+// ─── Tab Bar ────────────────────────────────────────────────────────────
+
+function TabBar({ activeTab, onTabChange }: {
+  activeTab: TabKey
+  onTabChange: (t: TabKey) => void
+}) {
+  return (
+    <div className="flex items-center border-b border-border-light px-2">
+      {TABS.map(({ key, label, icon: Icon }) => (
+        <button
+          key={key}
+          onClick={() => onTabChange(key)}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors relative ${
+            activeTab === key ? 'text-accent' : 'text-text-muted hover:text-text'
+          }`}
+        >
+          <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
+          <span className="text-xs">{label}</span>
+          {activeTab === key && (
+            <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-accent rounded-full" />
+          )}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ─── Slider Row helper ──────────────────────────────────────────────────
+
+function SliderRow({ label, value, displayValue, min, max, step, onChange }: {
+  label: string; value: number; displayValue: string; min: number; max: number; step: number
+  onChange: (v: number) => void
+}) {
+  return (
+    <div className="px-4 py-2">
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-[11px] font-medium text-text-secondary uppercase tracking-wider">{label}</span>
+        <span className="text-xs text-text-muted tabular-nums">{displayValue}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onChange(Math.max(min, value - step))}
+          className="w-6 h-6 flex items-center justify-center rounded bg-white/5 text-text-secondary text-xs shrink-0"
+        >−</button>
+        <input
+          type="range" min={min} max={max} step={step}
+          value={value}
+          onChange={e => onChange(Number(e.target.value))}
+          className="flex-1 h-1.5 appearance-none bg-white/20 rounded-full accent-[hsl(var(--accent))]"
+        />
+        <button
+          onClick={() => onChange(Math.min(max, value + step))}
+          className="w-6 h-6 flex items-center justify-center rounded bg-white/5 text-text-secondary text-xs shrink-0"
+        >+</button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Toggle Row helper ──────────────────────────────────────────────────
+
+function ToggleRow({ label, subtitle, checked, onChange }: {
+  label: string; subtitle?: string; checked: boolean; onChange: (v: boolean) => void
+}) {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      className="w-full flex items-center justify-between px-4 py-3 hover:bg-surface-hover transition-colors text-left"
+    >
+      <div className="min-w-0">
+        <span className="text-sm text-text block truncate">{label}</span>
+        {subtitle && <span className="text-[11px] text-text-muted block truncate">{subtitle}</span>}
+      </div>
+      <div className={`w-9 h-5 rounded-full transition-colors shrink-0 ml-3 ${checked ? 'bg-accent' : 'bg-text-muted/30'}`}>
+        <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform mt-0.5 ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
+      </div>
+    </button>
+  )
+}
+
+// ─── Section Header ─────────────────────────────────────────────────────
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <div className="px-4 pt-4 pb-1">
+      <span className="text-[11px] font-bold text-accent/80 uppercase tracking-widest">{title}</span>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  TAB 1: READER
+// ═══════════════════════════════════════════════════════════════════════
+
+function ReaderTab() {
+  const {
+    fontSize, lineHeight, paragraphSpacing, paragraphIndent, textAlignment, colorFilter,
+    setFontSize, setLineHeight, setParagraphSpacing, setParagraphIndent, setTextAlignment, setColorFilter,
+  } = useReaderStore()
+
+  const [apiPresets, setApiPresets] = useState<Array<ReaderPreset>>([])
+  const [newPresetName, setNewPresetName] = useState('')
+  const [showNewPreset, setShowNewPreset] = useState(false)
+
+  useEffect(() => {
+    api.getPresets().then(data => setApiPresets(data as ReaderPreset[])).catch(() => {})
+  }, [])
+
+  const isPresetActive = (p: ReaderPreset) =>
+    fontSize === p.fontSize &&
+    lineHeight === p.lineHeight &&
+    paragraphSpacing === p.paragraphSpacing &&
+    paragraphIndent === p.paragraphIndent &&
+    textAlignment === p.textAlignment &&
+    colorFilter === p.colorFilter
+
+  const saveCurrentAsPreset = async () => {
+    if (!newPresetName.trim()) return
+    try {
+      const res = await api.createPreset({
+        name: newPresetName.trim(),
+        fontSize, lineHeight, paragraphSpacing, paragraphIndent, textAlignment,
+        colorFilter,
+      })
+      setApiPresets(prev => [...prev, { id: res.id, name: newPresetName.trim(), description: 'Custom', fontSize, lineHeight, paragraphSpacing, paragraphIndent, textAlignment, colorFilter }])
+      setNewPresetName('')
+      setShowNewPreset(false)
+    } catch { /* ignore */ }
+  }
+
+  const deletePreset = async (id: string) => {
+    try {
+      await api.deletePreset(id)
+      setApiPresets(prev => prev.filter(p => p.id !== id))
+    } catch { /* ignore */ }
+  }
+
+  return (
+    <div className="overflow-y-auto h-full">
+      {/* Presets */}
+      <SectionHeader title="Reading Presets" />
+      <div className="flex gap-2 px-4 py-2 overflow-x-auto no-scrollbar">
+        {apiPresets.map(p => {
+          const active = isPresetActive(p)
+          return (
+            <div key={p.id} className="relative group shrink-0">
+              <button
+                onClick={() => {
+                  setFontSize(p.fontSize)
+                  setLineHeight(p.lineHeight)
+                  setParagraphSpacing(p.paragraphSpacing)
+                  setParagraphIndent(p.paragraphIndent)
+                  setTextAlignment(p.textAlignment)
+                  setColorFilter(p.colorFilter)
+                }}
+                className={`px-3 py-2 rounded-xl text-left transition-colors min-w-[100px] ${
+                  active ? 'bg-accent text-black' : 'bg-surface-hover/50 text-text hover:bg-surface-hover'
+                }`}
+              >
+                <div className="text-xs font-semibold">{p.name}</div>
+                <div className="text-[10px] opacity-70">{p.description || 'Preset'}</div>
+              </button>
+              {/* Delete button (only for non-builtin — id without hyphen is builtin) */}
+              {p.id.includes('-') && (
+                <button
+                  onClick={() => deletePreset(p.id)}
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-danger text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Save current settings as preset */}
+      <div className="px-4 py-1">
+        {!showNewPreset ? (
+          <button onClick={() => setShowNewPreset(true)}
+            className="text-xs text-accent hover:underline">
+            + Save Current as Preset
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              value={newPresetName} onChange={e => setNewPresetName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') saveCurrentAsPreset(); if (e.key === 'Escape') setShowNewPreset(false) }}
+              placeholder="Preset name…"
+              className="flex-1 bg-surface-hover/30 border border-border-light rounded-xl px-2 py-1.5 text-xs text-text placeholder:text-text-muted/40 outline-none focus:border-accent/50"
+            />
+            <button onClick={saveCurrentAsPreset}
+              className="px-3 py-1.5 rounded-xl bg-accent/10 text-accent text-xs font-medium hover:bg-accent/20 transition-colors">
+              Save
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Font */}
+      <SectionHeader title="Font" />
+      <SliderRow label="Font Size" value={fontSize} displayValue={`${fontSize}px`} min={10} max={48} step={1} onChange={setFontSize} />
+      <SliderRow label="Line Height" value={lineHeight} displayValue={lineHeight.toFixed(1)} min={1.0} max={3.0} step={0.1} onChange={setLineHeight} />
+
+      {/* Text Alignment */}
+      <div className="px-4 py-2">
+        <span className="text-[11px] font-medium text-text-secondary uppercase tracking-wider block mb-2">Alignment</span>
+        <div className="flex gap-1">
+          {([
+            { val: 'left' as TextAlignment, Icon: AlignLeft },
+            { val: 'center' as TextAlignment, Icon: AlignCenter },
+            { val: 'right' as TextAlignment, Icon: AlignRight },
+            { val: 'justify' as TextAlignment, Icon: AlignJustify },
+          ]).map(({ val, Icon }) => (
+            <button
+              key={val}
+              onClick={() => setTextAlignment(val)}
+              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                textAlignment === val ? 'bg-accent text-black' : 'text-text-secondary hover:bg-surface-hover'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Paragraph */}
+      <SectionHeader title="Paragraph" />
+      <SliderRow label="Indent" value={paragraphIndent} displayValue={`${paragraphIndent}px`} min={0} max={80} step={1} onChange={setParagraphIndent} />
+      <SliderRow label="Spacing" value={paragraphSpacing} displayValue={`${paragraphSpacing}px`} min={0} max={40} step={1} onChange={setParagraphSpacing} />
+
+      {/* Color Filter */}
+      <SectionHeader title="Color Filter" />
+      <div className="flex gap-1 px-4 py-2">
+        {([
+          { val: 'none' as ColorFilterType, label: 'Normal' },
+          { val: 'sepia' as ColorFilterType, label: 'Sepia' },
+          { val: 'invert' as ColorFilterType, label: 'Invert' },
+          { val: 'grayscale' as ColorFilterType, label: 'Gray' },
+        ]).map(({ val, label }) => (
+          <button
+            key={val}
+            onClick={() => setColorFilter(val)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              colorFilter === val ? 'bg-accent text-black' : 'bg-surface-hover/50 text-text-secondary hover:bg-surface-hover'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Reading Break Reminder */}
+      <SectionHeader title="Reading Break" />
+      <ReadingBreakSettingsInline />
+
+      <div className="h-8" />
+    </div>
+  )
+}
+
+// ─── Reading Break Settings inline ────────────────────────────────────────
+
+function ReadingBreakSettingsInline() {
+  const { readingBreak, setReadingBreakEnabled, setReadingBreakInterval } = useReaderStore()
+
+  return (
+    <div className="px-4 py-2 space-y-3">
+      <ToggleRow
+        label="Break Reminder"
+        subtitle="Remind you to rest your eyes"
+        checked={readingBreak.enabled}
+        onChange={setReadingBreakEnabled}
+      />
+      {readingBreak.enabled && (
+        <div className="flex items-center gap-3 px-1">
+          <span className="text-[11px] text-text-muted shrink-0">Interval</span>
+          <select
+            value={readingBreak.intervalMinutes}
+            onChange={e => setReadingBreakInterval(Number(e.target.value))}
+            className="flex-1 bg-surface-hover/30 border border-border-light rounded-lg px-2 py-1.5 text-xs text-text outline-none"
+          >
+            {[15, 30, 45, 60, 90, 120].map(m => (
+              <option key={m} value={m}>{m} min</option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  TAB 2: GENERAL
+// ═══════════════════════════════════════════════════════════════════════
+
+function GeneralTab() {
+  const {
+    mode, autoScrollSpeed,
+    immersiveMode, showScrollbar, showReadingTime, volumeNavigation,
+    screenAwake, bionicReading, webviewBg, selectableMode, reducedAnimations,
+    contentFilterEnabled, pagerDirection,
+    setMode, setAutoScrollSpeed,
+    setImmersiveMode, setShowScrollbar, setShowReadingTime, setVolumeNavigation,
+    setScreenAwake, setBionicReading, setWebviewBg, setSelectableMode, setReducedAnimations,
+    setPagerDirection,
+  } = useReaderStore()
+
+  const [filterEditorVisible, setFilterEditorVisible] = useState(false)
+
+  return (
+    <div className="overflow-y-auto h-full">
+      <SectionHeader title="Reading Mode" />
+      <div className="flex gap-1 px-4 py-2">
+        {([
+          { val: 'text' as ReaderMode, label: 'Continuous', icon: AlignLeft },
+          { val: 'webtoon' as ReaderMode, label: 'Webtoon', icon: Layout },
+          { val: 'pager' as ReaderMode, label: 'Pager', icon: BookOpen },
+        ]).map(({ val, label, icon: Icon }) => (
+          <button
+            key={val}
+            onClick={() => setMode(val)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              mode === val ? 'bg-accent text-black' : 'bg-surface-hover/50 text-text-secondary hover:bg-surface-hover'
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <SectionHeader title="Auto-scroll" />
+      <div className="flex items-center gap-3 px-4 py-2">
+        <button
+          onClick={() => setAutoScrollSpeed(autoScrollSpeed > 0 ? 0 : 5)}
+          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
+            autoScrollSpeed > 0 ? 'bg-accent text-black' : 'bg-surface-hover/50 text-text-secondary'
+          }`}
+        >
+          {autoScrollSpeed > 0 ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+        </button>
+        <span className="text-xs text-text-secondary shrink-0">Speed</span>
+        <input
+          type="range" min={1} max={10} step={1}
+          value={autoScrollSpeed || 5}
+          onChange={e => setAutoScrollSpeed(Number(e.target.value))}
+          className="flex-1 h-1.5 appearance-none bg-white/20 rounded-full accent-[hsl(var(--accent))]"
+        />
+        <span className="text-xs text-text-muted tabular-nums w-5">{autoScrollSpeed || 5}</span>
+      </div>
+
+      <SectionHeader title="Pager" />
+      <div className="flex items-center justify-between px-4 py-2">
+        <div className="min-w-0">
+          <span className="text-sm text-text block">Reading Direction</span>
+          <span className="text-[11px] text-text-muted block">{pagerDirection === 'rtl' ? 'Right-to-left (manga)' : 'Left-to-right (comic)'}</span>
+        </div>
+        <button
+          onClick={() => setPagerDirection(pagerDirection === 'rtl' ? 'ltr' : 'rtl')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            pagerDirection === 'rtl' ? 'bg-accent text-black' : 'bg-surface-hover/50 text-text-secondary'
+          }`}
+        >
+          <ArrowLeftRight className="w-3.5 h-3.5" />
+          {pagerDirection === 'rtl' ? 'RTL' : 'LTR'}
+        </button>
+      </div>
+
+      <SectionHeader title="Display" />
+      <ToggleRow label="Immersive Mode" subtitle="Hide bars while reading" checked={immersiveMode} onChange={setImmersiveMode} />
+      <ToggleRow label="Show Scrollbar" checked={showScrollbar} onChange={setShowScrollbar} />
+      <ToggleRow label="Show Reading Time" subtitle="Session timer in corner" checked={showReadingTime} onChange={setShowReadingTime} />
+      <ToggleRow label="Volume Key Navigation" subtitle="Use volume buttons for prev/next" checked={volumeNavigation} onChange={setVolumeNavigation} />
+      <ToggleRow label="Screen Always On" subtitle="Prevent screen timeout" checked={screenAwake} onChange={setScreenAwake} />
+
+      <SectionHeader title="Reading Aids" />
+      <ToggleRow label="Bionic Reading" subtitle="Bold first half of words for faster reading" checked={bionicReading} onChange={setBionicReading} />
+      <ToggleRow label="Selectable Mode" subtitle="Allow text selection" checked={selectableMode} onChange={setSelectableMode} />
+      <ToggleRow label="Reduced Animations" checked={reducedAnimations} onChange={setReducedAnimations} />
+      <ToggleRow label="WebView Background" subtitle="Prefetch next chapter in background" checked={webviewBg} onChange={setWebviewBg} />
+
+      {/* Content Filter */}
+      <SectionHeader title="Content Filter" />
+      <div className="px-4 py-2">
+        <button
+          onClick={() => setFilterEditorVisible(v => !v)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            contentFilterEnabled ? 'bg-accent text-black' : 'bg-surface-hover/50 text-text-secondary hover:bg-surface-hover'
+          }`}
+        >
+          <Filter className="w-3.5 h-3.5" />
+          {contentFilterEnabled ? 'Filter Active' : 'Content Filter'}
+        </button>
+        {filterEditorVisible && (
+          <div className="mt-2">
+            <ContentFilterEditor />
+          </div>
+        )}
+      </div>
+
+      <div className="h-8" />
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  TAB 3: COLORS
+// ═══════════════════════════════════════════════════════════════════════
+
+const CUSTOM_BG_THEMES = BG_THEMES.map(t => ({ id: t.id, name: t.name, colors: { bg: t.bg, textColor: t.text } }))
+
+function ColorsTab({ themes }: { themes: { id: string; name: string; colors: Record<string, string> }[] }) {
+  const { selectedThemeId, setTheme } = useReaderStore()
+  const allThemes = [...themes, ...CUSTOM_BG_THEMES.filter(t => !themes.find(th => th.id === t.id))]
+
+  return (
+    <div className="overflow-y-auto h-full pb-4">
+      <SectionHeader title="Background Theme" />
+      <div className="grid grid-cols-3 gap-2 px-4 py-2">
+        {allThemes.map(theme => (
+          <button
+            key={theme.id}
+            onClick={() => setTheme(theme.id)}
+            className={`p-2 rounded-xl border-2 transition-all text-left ${
+              selectedThemeId === theme.id ? 'border-accent ring-1 ring-accent/30' : 'border-transparent hover:border-border-light'
+            }`}
+          >
+            <div
+              className="w-full h-10 rounded-lg mb-1.5 flex items-center justify-center text-[8px] font-bold"
+              style={{
+                backgroundColor: theme.colors.bg || '#000',
+                color: theme.colors.textColor || '#fff',
+              }}
+            >
+              Aa
+            </div>
+            <div className="text-[10px] font-medium text-text truncate">{theme.name}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Background Color Picker */}
+      <SectionHeader title="Custom Background" />
+      <div className="flex flex-wrap gap-1.5 px-4 py-2">
+        {BG_THEMES.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTheme(t.id)}
+            className={`w-8 h-8 rounded-lg border-2 transition-all ${
+              selectedThemeId === t.id ? 'border-accent scale-110' : 'border-transparent hover:border-border-light'
+            }`}
+            style={{ backgroundColor: t.bg }}
+            aria-label={t.name}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  TAB 4: FONTS
+// ═══════════════════════════════════════════════════════════════════════
+
+function FontsTab() {
+  const { fontSize, lineHeight, setFontSize, setLineHeight } = useReaderStore()
+  const [fonts, setFonts] = useState<FontEntry[]>([])
+
+  useEffect(() => {
+    api.getFonts().then(setFonts).catch(() => {})
+  }, [])
+
+  return (
+    <div className="overflow-y-auto h-full pb-4">
+      <SectionHeader title="Font Family" />
+      <div className="px-4 py-2 space-y-1">
+        {fonts.length === 0 ? (
+          <p className="text-xs text-text-muted">No custom fonts available</p>
+        ) : (
+          fonts.map(f => (
+            <button
+              key={f.id}
+              onClick={() => setFontSize(fontSize)}
+              className="w-full text-left px-3 py-2 rounded-lg text-sm text-text hover:bg-surface-hover transition-colors"
+              style={{ fontFamily: f.family }}
+            >
+              {f.name}
+            </button>
+          ))
+        )}
+      </div>
+
+      <SectionHeader title="Size & Spacing" />
+      <SliderRow label="Font Size" value={fontSize} displayValue={`${fontSize}px`} min={10} max={48} step={1} onChange={setFontSize} />
+      <SliderRow label="Line Height" value={lineHeight} displayValue={lineHeight.toFixed(1)} min={1.0} max={3.0} step={0.1} onChange={setLineHeight} />
+
+      {/* Sample preview */}
+      <SectionHeader title="Preview" />
+      <div
+        className="mx-4 mt-2 p-4 rounded-xl bg-surface-hover/50 border border-border-light"
+        style={{ fontSize: `${fontSize}px`, lineHeight }}
+      >
+        <p className="text-text-secondary">
+          The quick brown fox jumps over the lazy dog. This is a sample paragraph to preview your reading settings in real time.
+        </p>
+      </div>
+    </div>
+  )
+}

@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "pnpm --filter @ireader/backend dev & sleep 2 && pnpm --filter @ireader/frontend dev",
     "build": "pnpm --filter @ireader/backend build && pnpm --filter @ireader/frontend build",
+    "build:mobile": "pnpm --filter @ireader/frontend build && pnpm --filter @ireader/mobile build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "pnpm --filter @ireader/e2e test",

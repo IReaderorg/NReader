@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
-  X, Sun, Moon, Upload, Trash2,
+  X,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   BookOpen, Layout, Play, Square, Filter,
-  Type, Palette, Settings, Loader2, ArrowLeftRight,
+  Type, Palette, Settings, ArrowLeftRight,
 } from 'lucide-react'
 import type { ReaderMode, TextAlignment, ColorFilterType, FontEntry } from '../store/reader-store'
 import { useReaderStore } from '../store/reader-store'
@@ -44,15 +44,6 @@ const BG_THEMES = [
 
 // ─── Built-in colors for custom color pickers ───────────────────────────
 
-const PRESET_COLORS = [
-  '#FFFFFF', '#FFF8E7', '#F4ECD8', '#E8E8E8', '#FFE0B2', '#F5F5DC',
-  '#1a1a2e', '#000000', '#2a2a3a', '#1b2838', '#1a3a2a', '#3d2b1f',
-  '#e0e0e0', '#c8c8c8', '#FFCDD2', '#BBDEFB', '#C8E6C9', '#FFE082',
-  '#D1C4E9', '#B2DFDB', '#F8BBD0', '#B3E5FC', '#DCEDC8', '#FFECB3',
-]
-
-// ─── Props ──────────────────────────────────────────────────────────────
-
 interface ReaderSettingsSheetProps {
   visible: boolean
   onClose: () => void
@@ -71,6 +62,7 @@ const TABS: { key: TabKey; label: string; icon: typeof Settings }[] = [
 
 export function ReaderSettingsSheet({ visible, onClose, availableThemes = [] }: ReaderSettingsSheetProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('reader')
+  const [touchStartX, setTouchStartX] = useState(0)
   useScrollLock(visible)
 
   useEffect(() => {
@@ -80,21 +72,46 @@ export function ReaderSettingsSheet({ visible, onClose, availableThemes = [] }: 
     return () => window.removeEventListener('keydown', onKey)
   }, [visible, onClose])
 
+  // Swipe right to close
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0]?.clientX ?? 0)
+  }, [])
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const endX = e.changedTouches[0]?.clientX ?? 0
+    if (endX - touchStartX > 80) onClose()
+  }, [touchStartX, onClose])
+
   if (!visible) return null
 
   return (
     <div className="fixed inset-0 z-[60]">
-      {/* Scrim */}
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      {/* Sheet */}
-      <div className="absolute bottom-0 left-0 right-0 max-h-[55vh] bg-surface rounded-t-2xl flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-200">
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1">
+      {/* Backdrop blur */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Right sidebar panel */}
+      <div
+        className="absolute right-0 top-0 bottom-0 w-[340px] max-w-[90vw] bg-surface flex flex-col shadow-2xl animate-in slide-in-from-right duration-200"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Handle bar for mobile */}
+        <div className="flex justify-center pt-2 pb-1 md:hidden">
           <div className="w-10 h-1 rounded-full bg-text-muted/30" />
         </div>
 
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border-light">
+          <h2 className="text-sm font-semibold text-text">Reader Settings</h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-surface-hover transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
         {/* Tabs */}
-        <TabBar activeTab={activeTab} onTabChange={setActiveTab} onClose={onClose} />
+        <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto">
@@ -113,10 +130,9 @@ export function ReaderSettingsSheet({ visible, onClose, availableThemes = [] }: 
 
 // ─── Tab Bar ────────────────────────────────────────────────────────────
 
-function TabBar({ activeTab, onTabChange, onClose }: {
+function TabBar({ activeTab, onTabChange }: {
   activeTab: TabKey
   onTabChange: (t: TabKey) => void
-  onClose: () => void
 }) {
   return (
     <div className="flex items-center border-b border-border-light px-2">
@@ -129,18 +145,12 @@ function TabBar({ activeTab, onTabChange, onClose }: {
           }`}
         >
           <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
-          <span className="hidden sm:inline">{label}</span>
+          <span className="text-xs">{label}</span>
           {activeTab === key && (
             <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-accent rounded-full" />
           )}
         </button>
       ))}
-      <button
-        onClick={onClose}
-        className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-surface-hover ml-1"
-      >
-        <X className="w-4 h-4" />
-      </button>
     </div>
   )
 }
@@ -280,7 +290,6 @@ function ReaderTab() {
                 <div className="text-xs font-semibold">{p.name}</div>
                 <div className="text-[10px] opacity-70">{p.description || 'Preset'}</div>
               </button>
-              {/* Delete button (only for non-builtin — id without hyphen is builtin) */}
               {p.id.includes('-') && (
                 <button
                   onClick={() => deletePreset(p.id)}
@@ -294,7 +303,6 @@ function ReaderTab() {
         })}
       </div>
 
-      {/* Save current settings as preset */}
       <div className="px-4 py-1">
         {!showNewPreset ? (
           <button onClick={() => setShowNewPreset(true)}
@@ -317,12 +325,10 @@ function ReaderTab() {
         )}
       </div>
 
-      {/* Font */}
       <SectionHeader title="Font" />
       <SliderRow label="Font Size" value={fontSize} displayValue={`${fontSize}px`} min={10} max={48} step={1} onChange={setFontSize} />
       <SliderRow label="Line Height" value={lineHeight} displayValue={lineHeight.toFixed(1)} min={1.0} max={3.0} step={0.1} onChange={setLineHeight} />
 
-      {/* Text Alignment */}
       <div className="px-4 py-2">
         <span className="text-[11px] font-medium text-text-secondary uppercase tracking-wider block mb-2">Alignment</span>
         <div className="flex gap-1">
@@ -345,12 +351,10 @@ function ReaderTab() {
         </div>
       </div>
 
-      {/* Paragraph */}
       <SectionHeader title="Paragraph" />
       <SliderRow label="Indent" value={paragraphIndent} displayValue={`${paragraphIndent}px`} min={0} max={80} step={1} onChange={setParagraphIndent} />
       <SliderRow label="Spacing" value={paragraphSpacing} displayValue={`${paragraphSpacing}px`} min={0} max={40} step={1} onChange={setParagraphSpacing} />
 
-      {/* Color Filter */}
       <SectionHeader title="Color Filter" />
       <div className="flex gap-1 px-4 py-2">
         {([
@@ -371,7 +375,6 @@ function ReaderTab() {
         ))}
       </div>
 
-      {/* Reading Break Reminder */}
       <SectionHeader title="Reading Break" />
       <ReadingBreakSettingsInline />
 
@@ -379,8 +382,6 @@ function ReaderTab() {
     </div>
   )
 }
-
-// ─── Reading Break Settings inline ────────────────────────────────────────
 
 function ReadingBreakSettingsInline() {
   const { readingBreak, setReadingBreakEnabled, setReadingBreakInterval } = useReaderStore()
@@ -498,30 +499,28 @@ function GeneralTab() {
       <SectionHeader title="Reading Aids" />
       <ToggleRow label="Bionic Reading" subtitle="Bold first half of words for faster reading" checked={bionicReading} onChange={setBionicReading} />
       <ToggleRow label="Selectable Mode" subtitle="Allow text selection" checked={selectableMode} onChange={setSelectableMode} />
-      <ToggleRow label="WebView Background" subtitle="Load pages invisibly in background" checked={webviewBg} onChange={setWebviewBg} />
-
-      <SectionHeader title="Performance" />
-      <ToggleRow label="Reduced Animations" subtitle="Better performance on older devices" checked={reducedAnimations} onChange={setReducedAnimations} />
+      <ToggleRow label="Reduced Animations" checked={reducedAnimations} onChange={setReducedAnimations} />
+      <ToggleRow label="WebView Background" subtitle="Prefetch next chapter in background" checked={webviewBg} onChange={setWebviewBg} />
 
       <SectionHeader title="Content Filter" />
       <div className="px-4 py-2">
         <button
-          onClick={() => setFilterEditorVisible(true)}
-          className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-surface-hover/30 hover:bg-surface-hover/50 transition-colors text-left"
+          onClick={() => setFilterEditorVisible(v => !v)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            contentFilterEnabled ? 'bg-accent text-black' : 'bg-surface-hover/50 text-text-secondary hover:bg-surface-hover'
+          }`}
         >
-          <div>
-            <span className="text-sm text-text">Filter Patterns</span>
-            <span className="text-[11px] text-text-muted block mt-0.5">
-              {contentFilterEnabled ? 'Enabled' : 'Disabled'} — Edit regex patterns
-            </span>
-          </div>
-          <Filter className="w-4 h-4 text-text-muted" />
+          <Filter className="w-3.5 h-3.5" />
+          {contentFilterEnabled ? 'Filter Active' : 'Content Filter'}
         </button>
+        {filterEditorVisible && (
+          <div className="mt-2">
+            <ContentFilterEditor />
+          </div>
+        )}
       </div>
 
       <div className="h-8" />
-
-      <ContentFilterEditor visible={filterEditorVisible} onClose={() => setFilterEditorVisible(false)} />
     </div>
   )
 }
@@ -530,173 +529,52 @@ function GeneralTab() {
 //  TAB 3: COLORS
 // ═══════════════════════════════════════════════════════════════════════
 
+const CUSTOM_BG_THEMES = BG_THEMES.map(t => ({ id: t.id, name: t.name, colors: { bg: t.bg, textColor: t.text } }))
+
 function ColorsTab({ themes }: { themes: { id: string; name: string; colors: Record<string, string> }[] }) {
-  const { brightness, setBrightness, selectedThemeId, setSelectedThemeId } = useReaderStore()
-  const [autoBrightness, setAutoBrightness] = useState(false)
-  const [showBgPicker, setShowBgPicker] = useState(false)
-  const [showTextPicker, setShowTextPicker] = useState(false)
-  const [customBg, setCustomBg] = useState('#1a1a2e')
-  const [customText, setCustomText] = useState('#e0e0e0')
-  const [themesModified, setThemesModified] = useState(false)
-
-  const handleBgThemeSelect = useCallback((id: string) => {
-    setSelectedThemeId(id)
-    setThemesModified(true)
-  }, [setSelectedThemeId])
-
-  const handleSaveTheme = useCallback(async () => {
-    try {
-      await api.createTheme({ name: 'Custom', colors: { background: customBg, text: customText, link: '#3b82f6', highlight: '#f59e0b', header: '#ffffff', separator: '#333', card: '#242424' } })
-      setThemesModified(false)
-    } catch { /* ignore */ }
-  }, [customBg, customText])
+  const { selectedThemeId, setTheme } = useReaderStore()
+  const allThemes = [...themes, ...CUSTOM_BG_THEMES.filter(t => !themes.find(th => th.id === t.id))]
 
   return (
-    <div className="overflow-y-auto h-full">
-      {/* Brightness */}
-      <SectionHeader title="Brightness" />
-      <ToggleRow label="Auto Brightness" checked={autoBrightness} onChange={setAutoBrightness} />
-      {!autoBrightness && (
-        <div className="flex items-center gap-3 px-4 py-2">
-          <Moon className="w-4 h-4 text-text-secondary shrink-0" />
-          <input
-            type="range" min={0} max={100} step={1}
-            value={brightness}
-            onChange={e => setBrightness(Number(e.target.value))}
-            className="flex-1 h-1.5 appearance-none bg-white/20 rounded-full accent-[hsl(var(--accent))]"
-          />
-          <Sun className="w-4 h-4 text-text-secondary shrink-0" />
-          <span className="text-xs text-text-muted tabular-nums w-8">{brightness}%</span>
-        </div>
-      )}
-
-      {/* Background Themes */}
+    <div className="overflow-y-auto h-full pb-4">
       <SectionHeader title="Background Theme" />
-      <div className="grid grid-cols-4 gap-2 px-4 py-2">
-        {/* API-loaded themes */}
-        {themes.map(t => (
+      <div className="grid grid-cols-3 gap-2 px-4 py-2">
+        {allThemes.map(theme => (
           <button
-            key={t.id}
-            onClick={() => handleBgThemeSelect(t.id)}
-            className="rounded-xl p-2 transition-all hover:scale-105 active:scale-95 border-2"
-            style={{
-              backgroundColor: t.colors?.background || '#1a1a2e',
-              borderColor: selectedThemeId === t.id ? 'hsl(var(--accent))' : 'transparent',
-            }}
+            key={theme.id}
+            onClick={() => setTheme(theme.id)}
+            className={`p-2 rounded-xl border-2 transition-all text-left ${
+              selectedThemeId === theme.id ? 'border-accent ring-1 ring-accent/30' : 'border-transparent hover:border-border-light'
+            }`}
           >
-            <div className="text-[10px] font-medium text-center truncate" style={{ color: t.colors?.text || '#e0e0e0' }}>
-              {t.name}
+            <div
+              className="w-full h-10 rounded-lg mb-1.5 flex items-center justify-center text-[8px] font-bold"
+              style={{
+                backgroundColor: theme.colors.bg || '#000',
+                color: theme.colors.textColor || '#fff',
+              }}
+            >
+              Aa
             </div>
-            <div className="w-full h-6 rounded mt-1 flex items-center justify-center" style={{ backgroundColor: (t.colors?.text || '#e0e0e0') + '20' }}>
-              <span className="text-[9px]" style={{ color: t.colors?.text || '#e0e0e0' }}>Aa</span>
-            </div>
-          </button>
-        ))}
-        {/* Fallback: built-in BG_THEMES if no API themes */}
-        {themes.length === 0 && BG_THEMES.map(t => (
-          <button
-            key={t.id}
-            onClick={() => handleBgThemeSelect(t.id)}
-            className="rounded-xl p-2 transition-all hover:scale-105 active:scale-95 border-2"
-            style={{
-              backgroundColor: t.bg,
-              borderColor: selectedThemeId === t.id ? 'hsl(var(--accent))' : 'transparent',
-            }}
-          >
-            <div className="text-[10px] font-medium text-center" style={{ color: t.text }}>
-              {t.name}
-            </div>
-            <div className="w-full h-6 rounded mt-1 flex items-center justify-center" style={{ backgroundColor: t.text + '20' }}>
-              <span className="text-[9px]" style={{ color: t.text }}>Aa</span>
-            </div>
+            <div className="text-[10px] font-medium text-text truncate">{theme.name}</div>
           </button>
         ))}
       </div>
 
-      {/* Custom Background Color */}
-      <SectionHeader title="Custom Colors" />
-      <div className="flex gap-2 px-4 py-2">
-        <button
-          onClick={() => setShowBgPicker(v => !v)}
-          className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-hover/50 hover:bg-surface-hover transition-colors"
-        >
-          <div className="w-6 h-6 rounded-lg border border-border-light" style={{ backgroundColor: customBg }} />
-          <span className="text-xs text-text-secondary">Background</span>
-        </button>
-        <button
-          onClick={() => setShowTextPicker(v => !v)}
-          className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-hover/50 hover:bg-surface-hover transition-colors"
-        >
-          <div className="w-6 h-6 rounded-lg border border-border-light" style={{ backgroundColor: customText }} />
-          <span className="text-xs text-text-secondary">Text Color</span>
-        </button>
+      <SectionHeader title="Custom Background" />
+      <div className="flex flex-wrap gap-1.5 px-4 py-2">
+        {BG_THEMES.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTheme(t.id)}
+            className={`w-8 h-8 rounded-lg border-2 transition-all ${
+              selectedThemeId === t.id ? 'border-accent scale-110' : 'border-transparent hover:border-border-light'
+            }`}
+            style={{ backgroundColor: t.bg }}
+            aria-label={t.name}
+          />
+        ))}
       </div>
-
-      {/* Background Color Picker */}
-      {showBgPicker && (
-        <div className="px-4 pb-2 animate-in fade-in slide-in-from-top-1">
-          <div className="grid grid-cols-8 gap-1.5 p-2 rounded-xl bg-surface-hover/30">
-            {PRESET_COLORS.map(c => (
-              <button
-                key={c}
-                onClick={() => { setCustomBg(c); setThemesModified(true); setShowBgPicker(false) }}
-                className="w-7 h-7 rounded-lg border border-border-light transition-transform hover:scale-110"
-                style={{ backgroundColor: c }}
-              />
-            ))}
-          </div>
-          <input
-            type="color" value={customBg}
-            onChange={e => { setCustomBg(e.target.value); setThemesModified(true) }}
-            className="w-full h-8 rounded-lg mt-2 cursor-pointer"
-          />
-        </div>
-      )}
-
-      {/* Text Color Picker */}
-      {showTextPicker && (
-        <div className="px-4 pb-2 animate-in fade-in slide-in-from-top-1">
-          <div className="grid grid-cols-8 gap-1.5 p-2 rounded-xl bg-surface-hover/30">
-            {PRESET_COLORS.map(c => (
-              <button
-                key={c}
-                onClick={() => { setCustomText(c); setThemesModified(true); setShowTextPicker(false) }}
-                className="w-7 h-7 rounded-lg border border-border-light transition-transform hover:scale-110"
-                style={{ backgroundColor: c }}
-              />
-            ))}
-          </div>
-          <input
-            type="color" value={customText}
-            onChange={e => { setCustomText(e.target.value); setThemesModified(true) }}
-            className="w-full h-8 rounded-lg mt-2 cursor-pointer"
-          />
-        </div>
-      )}
-
-      {/* Save / Delete custom theme */}
-      {themesModified && (
-        <div className="flex justify-end gap-2 px-4 py-2">
-          <button
-            onClick={handleSaveTheme}
-            className="px-4 py-1.5 rounded-lg bg-accent text-black text-xs font-medium hover:opacity-90 transition-opacity"
-          >
-            Save Custom Theme
-          </button>
-          <button
-            onClick={() => {
-              setCustomBg('#1a1a2e')
-              setCustomText('#e0e0e0')
-              setThemesModified(false)
-            }}
-            className="px-4 py-1.5 rounded-lg bg-surface-hover/50 text-text-secondary text-xs font-medium hover:bg-surface-hover transition-colors"
-          >
-            Reset
-          </button>
-        </div>
-      )}
-
-      <div className="h-8" />
     </div>
   )
 }
@@ -706,140 +584,47 @@ function ColorsTab({ themes }: { themes: { id: string; name: string; colors: Rec
 // ═══════════════════════════════════════════════════════════════════════
 
 function FontsTab() {
-  const { selectedFontId, setSelectedFont } = useReaderStore()
+  const { fontSize, lineHeight, setFontSize, setLineHeight } = useReaderStore()
   const [fonts, setFonts] = useState<FontEntry[]>([])
-  const [loading, setLoading] = useState(true)
-  const [uploading, setUploading] = useState(false)
-  const [fontError, setFontError] = useState<string | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const fetchFonts = useCallback(async () => {
-    try {
-      const data = await api.getFonts()
-      setFonts(data as FontEntry[])
-    } catch { /* ignore */ }
-    setLoading(false)
+  useEffect(() => {
+    api.getFonts().then(setFonts).catch(() => {})
   }, [])
 
-  useEffect(() => { fetchFonts() }, [fetchFonts])
-
-  const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    setFontError(null)
-    try {
-      await api.uploadFont(file)
-      await fetchFonts()
-    } catch (err) {
-      setFontError(err instanceof Error ? err.message : 'Upload failed')
-    }
-    setUploading(false)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }, [fetchFonts])
-
-  const handleDelete = useCallback(async (id: string) => {
-    setFontError(null)
-    setDeletingId(id)
-    try {
-      await api.deleteFont(id)
-      if (selectedFontId === id) setSelectedFont('', 'System')
-      await fetchFonts()
-    } catch (err) {
-      setFontError(err instanceof Error ? err.message : 'Delete failed')
-    }
-    setDeletingId(null)
-  }, [selectedFontId, setSelectedFont, fetchFonts])
-
   return (
-    <div className="overflow-y-auto h-full">
-      {/* System default */}
-      <div className="px-4 pt-3 pb-1">
-        <button
-          onClick={() => setSelectedFont('', 'System')}
-          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors ${
-            !selectedFontId ? 'bg-accent/10 border border-accent/30' : 'bg-surface-hover/30 hover:bg-surface-hover/50'
-          }`}
-        >
-          <span className={`text-sm font-medium ${!selectedFontId ? 'text-accent' : 'text-text'}`}>System Default</span>
-          {!selectedFontId && <span className="text-[10px] text-accent font-medium">Active</span>}
-        </button>
-      </div>
-
-      <SectionHeader title="Uploaded Fonts" />
-
-      {/* Upload button */}
-      <div className="px-4 py-2">
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-border-light hover:border-accent/50 transition-colors text-text-secondary hover:text-accent disabled:opacity-50"
-        >
-          {uploading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Upload className="w-4 h-4" />
-          )}
-          <span className="text-xs font-medium">{uploading ? 'Uploading...' : 'Upload Font (.ttf, .otf, .woff2)'}</span>
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".ttf,.otf,.woff2"
-          onChange={handleUpload}
-          className="hidden"
-        />
-        {fontError && (
-          <p className="text-[11px] text-danger mt-1.5 text-center">{fontError}</p>
+    <div className="overflow-y-auto h-full pb-4">
+      <SectionHeader title="Font Family" />
+      <div className="px-4 py-2 space-y-1">
+        {fonts.length === 0 ? (
+          <p className="text-xs text-text-muted">No custom fonts available</p>
+        ) : (
+          fonts.map(f => (
+            <button
+              key={f.id}
+              onClick={() => setFontSize(fontSize)}
+              className="w-full text-left px-3 py-2 rounded-lg text-sm text-text hover:bg-surface-hover transition-colors"
+              style={{ fontFamily: f.family }}
+            >
+              {f.name}
+            </button>
+          ))
         )}
       </div>
 
-      {/* Font list */}
-      {loading ? (
-        <div className="flex justify-center py-4">
-          <Loader2 className="w-4 h-4 text-text-muted animate-spin" />
-        </div>
-      ) : fonts.length === 0 ? (
-        <div className="text-center py-4">
-          <span className="text-xs text-text-muted">No fonts uploaded yet</span>
-        </div>
-      ) : (
-        <div className="px-2">
-          {fonts.map(f => {
-            const isSelected = selectedFontId === f.id
-            return (
-              <div
-                key={f.id}
-                className={`flex items-center justify-between px-2 py-2 rounded-xl mb-1 transition-colors ${
-                  isSelected ? 'bg-accent/10' : 'hover:bg-surface-hover/50'
-                }`}
-              >
-                <button
-                  onClick={() => setSelectedFont(f.id, f.name)}
-                  className="flex-1 text-left min-w-0"
-                >
-                  <div className={`text-sm font-medium truncate ${isSelected ? 'text-accent' : 'text-text'}`}>
-                    {f.name}
-                  </div>
-                  <div className="text-[10px] text-text-muted">
-                    {f.format?.toUpperCase()} • {(f.fileSize / 1024).toFixed(0)} KB
-                  </div>
-                </button>
-                <button
-                  onClick={() => handleDelete(f.id)}
-                  disabled={deletingId === f.id}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors shrink-0 ml-2 disabled:opacity-50"
-                >
-                  {deletingId === f.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-            )
-          })}
-        </div>
-      )}
+      <SectionHeader title="Size & Spacing" />
+      <SliderRow label="Font Size" value={fontSize} displayValue={`${fontSize}px`} min={10} max={48} step={1} onChange={setFontSize} />
+      <SliderRow label="Line Height" value={lineHeight} displayValue={lineHeight.toFixed(1)} min={1.0} max={3.0} step={0.1} onChange={setLineHeight} />
 
-      <div className="h-8" />
+      {/* Sample preview */}
+      <SectionHeader title="Preview" />
+      <div
+        className="mx-4 mt-2 p-4 rounded-xl bg-surface-hover/50 border border-border-light"
+        style={{ fontSize: `${fontSize}px`, lineHeight }}
+      >
+        <p className="text-text-secondary">
+          The quick brown fox jumps over the lazy dog. This is a sample paragraph to preview your reading settings in real time.
+        </p>
+      </div>
     </div>
   )
 }

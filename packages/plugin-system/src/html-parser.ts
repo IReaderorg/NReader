@@ -4,8 +4,8 @@ export interface CheerioElement {
   text(): string
   attr(name: string): string | null
   html(): string
-  find(selector: string): CheerioElement[]
-  children(): CheerioElement[]
+  find(selector: string): CheerioCollection
+  children(): CheerioCollection
   each(fn: (i: number, el: CheerioElement) => void): void
   eq(index: number): CheerioElement | null
 }
@@ -71,7 +71,7 @@ export function parseHTML(html: string): CheerioAPI {
         const el = elements[index]
         return el ? wrapElement(el) : null
       },
-      map(fn: (i: number, el: CheerioElement) => void) {
+      map<T>(fn: (i: number, el: CheerioElement) => T): T[] {
         return elements.map((el, i) => fn(i, wrapElement(el)))
       },
     }
@@ -99,5 +99,3 @@ export function parseHTML(html: string): CheerioAPI {
 
   return cheerio
 }
-
-export { CheerioAPI, CheerioCollection, CheerioElement }

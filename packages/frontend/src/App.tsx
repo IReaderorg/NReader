@@ -25,6 +25,7 @@ const TtsSettingsPage = React.lazy(() => import('./pages/TtsSettingsPage').then(
 const TranslationSettingsPage = React.lazy(() => import('./pages/TranslationSettingsPage').then(m => ({ default: m.TranslationSettingsPage })))
 const MorePage = React.lazy(() => import('./pages/MorePage').then(m => ({ default: m.MorePage })))
 const BackupPage = React.lazy(() => import('./pages/BackupPage').then(m => ({ default: m.BackupPage })))
+const CloudBackupPage = React.lazy(() => import('./pages/CloudBackupPage').then(m => ({ default: m.CloudBackupPage })))
 const PluginManagerPage = React.lazy(() => import('./pages/PluginManagerPage').then(m => ({ default: m.PluginManagerPage })))
 const AppearanceSettingsPage = React.lazy(() => import('./pages/AppearanceSettingsPage').then(m => ({ default: m.AppearanceSettingsPage })))
 const SecuritySettingsPage = React.lazy(() => import('./pages/SecuritySettingsPage').then(m => ({ default: m.SecuritySettingsPage })))
@@ -37,6 +38,11 @@ const SourceSettingsPage = React.lazy(() => import('./pages/SourceSettingsPage')
 const AboutPage = React.lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })))
 const ReadingStatsPage = React.lazy(() => import('./pages/ReadingStatsPage').then(m => ({ default: m.ReadingStatsPage })))
 const StreaksDetailPage = React.lazy(() => import('./pages/StreaksPage').then(m => ({ default: m.StreaksDetailPage })))
+const ProfilePage = React.lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
+const CommunityPage = React.lazy(() => import('./pages/CommunityPage').then(m => ({ default: m.CommunityPage })))
+const LeaderboardPage = React.lazy(() => import('./pages/LeaderboardPage').then(m => ({ default: m.LeaderboardPage })))
+const QuotesPage = React.lazy(() => import('./pages/QuotesPage').then(m => ({ default: m.QuotesPage })))
+const CharacterArtPage = React.lazy(() => import('./pages/CharacterArtPage').then(m => ({ default: m.CharacterArtPage })))
 
 function PageLoader() {
   return (
@@ -84,10 +90,16 @@ export function App() {
               <Route path="/settings/advanced" element={<AdvancedSettingsPage />} />
               <Route path="/more" element={<MorePage />} />
               <Route path="/backup" element={<BackupPage />} />
+              <Route path="/backup/cloud" element={<CloudBackupPage />} />
               <Route path="/plugins" element={<PluginManagerPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/stats" element={<ReadingStatsPage />} />
               <Route path="/stats/streaks" element={<StreaksDetailPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/community" element={<CommunityPage />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} />
+              <Route path="/quotes" element={<QuotesPage />} />
+              <Route path="/character-art/:mangaId" element={<CharacterArtPage />} />
             </Route>
           </Routes>
           </Suspense>

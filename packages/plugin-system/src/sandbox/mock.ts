@@ -1,10 +1,12 @@
 import type { SandboxAdapter, SandboxInstance, SandboxOptions } from './interface.js'
 
 export class MockSandbox implements SandboxAdapter, SandboxInstance {
-  private code = ''
+  get type(): 'mock' {
+    return 'mock'
+  }
 
   get name(): string {
-    return 'mock'
+    return 'Mock Sandbox'
   }
 
   isAvailable(): boolean {
@@ -15,12 +17,11 @@ export class MockSandbox implements SandboxAdapter, SandboxInstance {
     return Promise.resolve(this)
   }
 
-  load(_pluginId: string, code: string): Promise<void> {
-    this.code = code
+  load(_pluginId: string, _code: string): Promise<void> {
     return Promise.resolve()
   }
 
-  execute(_method: string, _args: unknown[]): Promise<unknown> {
+  execute(_pluginId: string, _method: string, _args: unknown[]): Promise<unknown> {
     return Promise.resolve([])
   }
 

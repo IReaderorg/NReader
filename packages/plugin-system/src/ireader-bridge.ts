@@ -97,6 +97,8 @@ const IREADER_METHODS = [
   'fetchPopularManga', 'fetchSearchManga', 'fetchMangaDetail',
   'fetchChapterList', 'fetchPageList',
 ] as const
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+void IREADER_METHODS
 
 /**
  * Detect whether a loaded plugin object follows the IReader source format

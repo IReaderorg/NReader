@@ -13,12 +13,10 @@ export interface AutoBackupConfig {
 const DEFAULT_CONFIG: AutoBackupConfig = {
   enabled: false,
   intervalHours: 24,
-  maxBackups: 5,
+  maxBackups: 10,
   includeCovers: true,
   backupDir: join(process.cwd(), 'backups'),
 }
-
-const CONFIG_KEY = 'autoBackup'
 
 export class AutoBackupScheduler {
   private config: AutoBackupConfig

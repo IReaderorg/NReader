@@ -1,12 +1,40 @@
-node_modules/
-dist/
-.turbo/
-*.db
-*.db-wal
-*.db-shm
-.env
-.env.local
+
+*~
+# Build
+# Build artifacts
 coverage/
+# Database
+*.db
+*.db-shm
+*.db-wal
+# Dependencies
+dist/
+.DS_Store
+.env
+# Environment
+.env.local
+# IDE
+.idea/
+ireader-next/.playwright-mcp/-e 
+*.log
+# Logs
+# Misc
+node_modules/
+# OS
+packages/backend/dist/
+packages/core/dist/
+packages/frontend/dist/
+packages/plugin-system/dist/
+packages/reader-engine/dist/
+packages/storage/dist/
+packages/translation-engine/dist/
+packages/tts-engine/dist/
+# Playwright
+*.playwright-mcp/
 playwright-report/
+*.swo
+*.swp
 test-results/
-ireader-next/.playwright-mcp/
+Thumbs.db
+.turbo/
+.vite/

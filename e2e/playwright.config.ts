@@ -3,10 +3,14 @@ import { defineConfig } from '@playwright/test'
 export default defineConfig({
   testDir: '.',
   timeout: 30000,
-  retries: 1,
+  retries: 0,
+  globalSetup: './global-setup.ts',
   use: {
     baseURL: 'http://localhost:5173',
-    headless: true,
+    headless: false,
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
   },
   webServer: [
     {

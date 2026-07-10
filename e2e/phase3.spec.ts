@@ -101,7 +101,7 @@ test.describe('Phase 3: Downloads + Settings', () => {
   test('Frontend: more page links to settings', async ({ page }) => {
     await page.goto('http://localhost:5173/more')
     await page.waitForLoadState('networkidle')
-    const settingsLink = page.getByText('Settings')
+    const settingsLink = page.getByText('Settings').first()
     await expect(settingsLink).toBeVisible({ timeout: 10000 })
   })
 })

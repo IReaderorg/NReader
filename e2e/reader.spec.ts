@@ -37,10 +37,9 @@ test.describe('Reader Experience Updates', () => {
     await page.goto('/sources/demo/manga/demo%2Fmanga-1')
     await expect(page.getByText('Demo Manga')).toBeVisible({ timeout: 5000 })
 
-    // Click first visible chapter (sorted desc, so first is highest number)
-    // The chapter items show as "Ch. X — Title" format
-    const chapterLink = page.locator('text=Ch.').first()
-    await expect(chapterLink).toBeVisible()
+    // Click the first chapter link (div with cursor-pointer)
+    const chapterLink = page.locator('text=Ch. 1').first()
+    await expect(chapterLink).toBeVisible({ timeout: 5000 })
     await chapterLink.click()
 
     // Should navigate to reader
@@ -58,7 +57,9 @@ test.describe('Reader Experience Updates', () => {
   test('Frontend: reader keyboard shortcut t cycles reader modes', async ({ page }) => {
     await page.goto('/sources/demo/manga/demo%2Fmanga-1')
     await expect(page.getByText('Demo Manga')).toBeVisible({ timeout: 5000 })
-    await page.locator('text=Ch.').first().click()
+    const chLink = page.locator('text=Ch. 1').first()
+    await expect(chLink).toBeVisible({ timeout: 5000 })
+    await chLink.click()
     await page.waitForURL(/\/reader\/demo\/demo%2Fmanga-1\//, { timeout: 8000 })
     await page.waitForTimeout(2000)
 

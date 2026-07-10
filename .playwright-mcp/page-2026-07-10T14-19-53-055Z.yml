@@ -1,0 +1,95 @@
+- generic [ref=f4e2]:
+  - link "Skip to main content" [ref=f4e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=f4e8]:
+    - complementary [ref=f4e9]:
+      - navigation [ref=f4e14]:
+        - link "Home" [ref=f4e15] [cursor=pointer]:
+          - /url: /
+        - link "Browse" [ref=f4e20] [cursor=pointer]:
+          - /url: /sources
+        - link "Library" [ref=f4e25] [cursor=pointer]:
+          - /url: /library
+        - link "Updates" [ref=f4e29] [cursor=pointer]:
+          - /url: /updates
+        - link "History" [ref=f4e36] [cursor=pointer]:
+          - /url: /history
+        - link "More" [ref=f4e42] [cursor=pointer]:
+          - /url: /more
+    - generic [ref=f4e48]:
+      - banner [ref=f4e49]:
+        - generic [ref=f4e50]:
+          - button "Go back" [ref=f4e51] [cursor=pointer]
+          - heading "Settings" [level=1] [ref=f4e54]
+        - button "Toggle theme" [ref=f4e55] [cursor=pointer]
+      - main [ref=f4e58]:
+        - generic [ref=f4e59]:
+          - generic [ref=f4e61]:
+            - button [ref=f4e62] [cursor=pointer]
+            - heading "Appearance & Reading" [level=1] [ref=f4e65]
+          - generic [ref=f4e66]:
+            - generic [ref=f4e67]:
+              - heading "Reader Themes" [level=2] [ref=f4e68]
+              - generic [ref=f4e69]:
+                - button "Light" [ref=f4e70] [cursor=pointer]
+                - button "Sepia" [ref=f4e76] [cursor=pointer]
+                - button "Dark" [ref=f4e82] [cursor=pointer]
+                - button "Night" [ref=f4e91] [cursor=pointer]
+                - button "OLED" [ref=f4e97] [cursor=pointer]
+              - button "New Custom Theme" [ref=f4e103] [cursor=pointer]
+            - generic [ref=f4e105]:
+              - heading "Fonts" [level=2] [ref=f4e106]
+              - paragraph [ref=f4e107]: Select a font for reading or upload your own (.ttf, .otf, .woff2)
+              - button [ref=f4e108] [cursor=pointer]:
+                - generic [ref=f4e112]:
+                  - paragraph [ref=f4e113]: System Default
+                  - paragraph [ref=f4e114]: Your device's default font
+              - button "Upload Font" [ref=f4e117] [cursor=pointer]
+            - generic [ref=f4e121]:
+              - heading "Text Layout" [level=2] [ref=f4e122]
+              - generic [ref=f4e123]:
+                - generic [ref=f4e124]:
+                  - generic [ref=f4e125]:
+                    - generic [ref=f4e126]: Line Height
+                    - generic [ref=f4e127]: "1.8"
+                  - slider [ref=f4e128]: "1.8"
+                - generic [ref=f4e129]:
+                  - generic [ref=f4e130]:
+                    - generic [ref=f4e131]: Paragraph Spacing
+                    - generic [ref=f4e132]: 16px
+                  - slider [ref=f4e133]: "16"
+                - generic [ref=f4e134]:
+                  - generic [ref=f4e135]:
+                    - generic [ref=f4e136]: Paragraph Indent
+                    - generic [ref=f4e137]: 0px
+                  - slider [ref=f4e138]: "0"
+                - generic [ref=f4e139]:
+                  - text: Text Alignment
+                  - generic [ref=f4e140]:
+                    - button "Left" [ref=f4e141] [cursor=pointer]
+                    - button "Center" [ref=f4e142] [cursor=pointer]
+                    - button "Right" [ref=f4e143] [cursor=pointer]
+                    - button "Justify" [ref=f4e144] [cursor=pointer]
+            - generic [ref=f4e145]:
+              - heading "Color Filter" [level=2] [ref=f4e146]
+              - paragraph [ref=f4e147]: Apply a color overlay to the entire reader
+              - generic [ref=f4e148]:
+                - button "Normal" [ref=f4e149] [cursor=pointer]
+                - button "Sepia" [ref=f4e150] [cursor=pointer]
+                - button "Invert" [ref=f4e151] [cursor=pointer]
+                - button "Grayscale" [ref=f4e152] [cursor=pointer]
+            - generic [ref=f4e153]:
+              - heading "Auto-Scroll" [level=2] [ref=f4e154]
+              - generic [ref=f4e155]:
+                - paragraph [ref=f4e156]: Automatically scroll through the page at a set speed. Currently active at speed 5.
+                - generic [ref=f4e157]:
+                  - button [ref=f4e158] [cursor=pointer]
+                  - generic [ref=f4e161]:
+                    - generic [ref=f4e162]: Slow
+                    - slider [ref=f4e163]: "5"
+                    - generic [ref=f4e164]: Fast
+            - generic [ref=f4e165]:
+              - heading "Content Filter" [level=2] [ref=f4e166]
+              - generic [ref=f4e167]:
+                - paragraph [ref=f4e168]: Filter out unwanted text patterns from chapter content
+                - checkbox [ref=f4e170]

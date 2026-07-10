@@ -182,6 +182,8 @@ export function ReaderPage() {
         // Check if pages are empty URLs (text content signal from IReader sources)
         const hasTextContent = data.length > 0 && data.every(p => !p.url)
         if (hasTextContent) {
+          // Auto-switch to text mode for novel chapters
+          useReaderStore.getState().setMode('text')
           // Try to get text content
           api.getText(sourceId, chapterId)
             .then(textParts => {
@@ -202,6 +204,7 @@ export function ReaderPage() {
         // Fallback: try text endpoint
         api.getText(sourceId!, chapterId)
           .then(textParts => {
+            useReaderStore.getState().setMode('text')
             setTextContent(textParts.join('\n\n'))
             setLoading(false)
           })

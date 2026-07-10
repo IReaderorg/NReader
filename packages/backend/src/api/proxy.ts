@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { getBrowserHeaders } from '../utils/fingerprint.js'
 
 interface CacheEntry {
   data: ArrayBuffer
@@ -101,6 +102,104 @@ app.get('/image', async (c) => {
       code: 'SOURCE_UNAVAILABLE',
       status: 502,
     }, 502)
+  }
+})
+
+// --- Cookie Jar ---
+const cookieJars = new Map<string, string[]>()
+
+function getDomain(url: string): string {
+  try { return new URL(url).hostname } catch { return '' }
+}
+
+function mergeCookies(domain: string, setCookie: string | string[] | undefined): void {
+  if (!setCookie) return
+  const existing = cookieJars.get(domain) ?? []
+  const newCookies = Array.isArray(setCookie) ? setCookie : [setCookie]
+  // Replace cookies with same name
+  for (const nc of newCookies) {
+    const name = nc.split('=')[0]!
+    const idx = existing.findIndex(c => c.split('=')[0] === name)
+    if (idx >= 0) existing[idx] = nc
+    else existing.push(nc)
+  }
+  cookieJars.set(domain, existing)
+}
+
+function getCookieString(url: string): string {
+  const domain = getDomain(url)
+  const cookies = cookieJars.get(domain)
+  return cookies ? cookies.map(c => c.split(';')[0]).join('; ') : ''
+}
+
+// --- Proxy Fetch Endpoint ---
+
+async function proxyFetch(url: string, method: string, reqHeaders: Record<string, string>, body?: string): Promise<Response> {
+  const parsed = new URL(url)
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return new Response(JSON.stringify({ error: 'Only http/https URLs allowed', code: 'VALIDATION_ERROR', status: 400 }), { status: 400, headers: { 'Content-Type': 'application/json' } })
+  }
+  if (isInternalHost(parsed.hostname)) {
+    return new Response(JSON.stringify({ error: 'URL points to internal network', code: 'VALIDATION_ERROR', status: 400 }), { status: 400, headers: { 'Content-Type': 'application/json' } })
+  }
+
+  const fingerprint = getBrowserHeaders()
+  const fetchHeaders: Record<string, string> = {
+    ...fingerprint,
+    ...reqHeaders,
+  }
+
+  const cookie = getCookieString(url)
+  if (cookie) fetchHeaders['Cookie'] = cookie
+
+  const res = await fetch(url, {
+    method,
+    headers: fetchHeaders,
+    body: method !== 'GET' && method !== 'HEAD' ? body : undefined,
+    signal: AbortSignal.timeout(30_000),
+  })
+
+  // Store cookies
+  const domain = getDomain(url)
+  const setCookie = res.headers.get('set-cookie')
+  if (setCookie) mergeCookies(domain, setCookie)
+
+  const text = await res.text()
+  const contentType = res.headers.get('content-type') || 'text/plain'
+
+  return new Response(text, {
+    status: res.status,
+    headers: {
+      'Content-Type': contentType,
+      'X-Proxy-Status': 'proxied',
+    },
+  })
+}
+
+app.get('/fetch', async (c) => {
+  const rawUrl = c.req.query('url')
+  if (!rawUrl) return c.json({ error: 'url query parameter required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+  try {
+    const res = await proxyFetch(decodeURIComponent(rawUrl), 'GET', {})
+    return res
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PROXY_ERROR', status: 502 }, 502)
+  }
+})
+
+app.post('/fetch', async (c) => {
+  let body: { url: string; method?: string; headers?: Record<string, string>; body?: string }
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({ error: 'Invalid JSON body', code: 'VALIDATION_ERROR', status: 400 }, 400)
+  }
+  if (!body.url) return c.json({ error: 'url is required in body', code: 'VALIDATION_ERROR', status: 400 }, 400)
+  try {
+    const res = await proxyFetch(body.url, body.method?.toUpperCase() || 'GET', body.headers || {}, body.body)
+    return res
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PROXY_ERROR', status: 502 }, 502)
   }
 })
 

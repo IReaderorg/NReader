@@ -202,3 +202,61 @@ Visit https://react.dev/link/error-boundaries to learn more about error boundari
 [ 7203885ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+15:0
 [ 7204207ms] [ERROR] Failed to load resource: the server responded with a status of 502 (Bad Gateway) @ http://localhost:5173/api/v1/sources/manganato/popular?page=1:0
 [ 7204263ms] [ERROR] Failed to load resource: the server responded with a status of 502 (Bad Gateway) @ http://localhost:5173/api/v1/sources/manganato/popular?page=1:0
+[ 8149267ms] ReferenceError: HomePage is not defined
+    at App (http://localhost:5173/src/App.tsx?t=1783701329741:121:84)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12408:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:11827:37)
+[ 8149266ms] [WARNING] %s
+
+%s
+ An error occurred in the <App> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:6965
+[ 8176260ms] ReferenceError: PwaInstallPrompt is not defined
+    at Layout (http://localhost:5173/src/components/Layout.tsx?t=1783701356757:109:28)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12408:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:11827:37)
+[ 8176259ms] [WARNING] %s
+
+%s
+ An error occurred in the <Layout> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:6965
+[ 8183656ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/components/Layout.tsx?t=1783701364289:0
+[ 8183657ms] [ERROR] [vite] Failed to reload /src/components/Layout.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[ 8208123ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/src/components/PwaInstallPrompt.tsx?t=1783701388753:0
+[ 8208124ms] [ERROR] [vite] Failed to reload /src/components/PwaInstallPrompt.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[ 9242557ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:20102
+[10882587ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:20102
+[10886009ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:20102
+[10907540ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+2:0
+[10907546ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+1:0
+[10907550ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+6:0
+[10907551ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+4:0
+[10907553ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+5:0
+[10907557ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+3:0
+[10908444ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+7:0
+[10908483ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+8:0
+[10908494ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+9:0
+[10908496ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+10:0
+[10908499ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+11:0
+[10908502ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+12:0
+[10909855ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+13:0
+[10909871ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+14:0
+[10909872ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+15:0
+[10909874ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+16:0
+[10909877ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+17:0
+[10909881ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+18:0
+[10911048ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+Manga:0

@@ -108,6 +108,34 @@ export function createSourcesRouter(pluginService: {
   // --- Source Repository Support ---
 
   /**
+   * Get categories/genres for a source.
+   */
+  app.get('/:id/categories', async (c) => {
+    const { id } = c.req.param()
+    try {
+      const categories = await pluginService.executePluginMethod(id, 'categories', [])
+      return c.json(categories)
+    } catch {
+      // Fallback: return empty list if plugin doesn't support categories
+      return c.json([])
+    }
+  })
+
+  /**
+   * Browse manga by category/genre for a source.
+   */
+  app.get('/:id/browse/:category', async (c) => {
+    const { id, category } = c.req.param()
+    const page = Number(c.req.query('page')) || 1
+    try {
+      const results = await pluginService.executePluginMethod(id, 'browse', [category, page])
+      return c.json(results)
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
+
+  /**
    * Install a source from a URL. Downloads the JS file and saves to plugins directory.
    */
   app.post('/install', async (c) => {

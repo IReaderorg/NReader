@@ -18,6 +18,8 @@ import { createReadingStatsRouter } from './api/reading-stats.js'
 import { createStreaksRouter } from './api/streaks.js'
 import { createReadingGoalsRouter } from './api/reading-goals.js'
 import { createReaderPresetsRouter } from './api/reader-presets.js'
+import { createExploreRouter } from './api/explore.js'
+import { statsApp } from './api/stats.js'
 import { BackupService } from './backup/backup-service.js'
 import { AutoBackupScheduler } from './backup/auto-backup-scheduler.js'
 import { proxyApp } from './api/proxy.js'
@@ -76,6 +78,7 @@ export async function startApp(): Promise<Hono> {
   }
 
   app.route('/api/v1/sources', sourcesRouter)
+  app.route('/api/v1/explore', createExploreRouter(pluginService ?? new MockPluginService() as any))
   app.route('/api/v1', healthApp)
   app.route('/api/v1/library', createLibraryRouter(libraryRepo))
   app.route('/api/v1/history', createHistoryRouter(historyRepo))
@@ -113,7 +116,8 @@ export async function startApp(): Promise<Hono> {
     ])
   })
 
-  app.route('/proxy', proxyApp)
+  app.route('/api/v1/proxy', proxyApp)
+  app.route('/api/v1', statsApp)
 
   return app
 }

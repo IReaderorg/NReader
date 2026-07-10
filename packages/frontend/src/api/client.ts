@@ -318,6 +318,31 @@ export const api = {
   deleteFont: (id: string) =>
     apiFetch<{ success: boolean }>(`/fonts/${id}`, { method: 'DELETE' }),
 
+  // Explore
+  getGenres: () => apiFetch<string[]>('/explore/genres'),
+  getTrending: () => apiFetch<MangaSummary[]>('/explore/trending'),
+  getUpdates: () => apiFetch<Array<{ mangaId: string; title: string; coverUrl: string; sourceId: string; sourceName: string; chapterNumber: number; chapterTitle?: string; updatedAt: string }>>('/explore/updates'),
+
+  // Source categories / browse
+  getSourceCategories: (id: string) => apiFetch<string[]>(`/sources/${id}/categories`),
+  browseSourceCategory: (id: string, category: string, page = 1) =>
+    apiFetch<MangaSummary[]>(`/sources/${id}/browse/${enc(category)}?page=${page}`),
+
+  // Proxy
+  proxyFetch: (url: string, options?: { method?: string; headers?: Record<string, string>; body?: string }) => {
+    const base = '/api/v1/proxy/fetch'
+    if (!options || options.method === 'GET') {
+      return apiFetch<{ data?: string }>(`${base}?url=${encodeURIComponent(url)}`)
+    }
+    return apiFetch<{ data?: string }>(base, {
+      method: 'POST',
+      body: JSON.stringify({ url, ...options }),
+    })
+  },
+
+  // Stats
+  getStats: () => apiFetch<{ totalBooks: number; totalChapters: number; totalDownloads: number; storageUsedBytes: number }>('/stats'),
+
   // Reading Presets
   getPresets: () => apiFetch<Array<{ id: string; name: string; fontSize: number; lineHeight: number; paragraphSpacing: number; paragraphIndent: number; textAlignment: string; colorFilter: string }>>('/reader/presets'),
   createPreset: (data: { name: string; fontSize: number; lineHeight: number; paragraphSpacing: number; paragraphIndent: number; textAlignment: string; colorFilter: string }) =>

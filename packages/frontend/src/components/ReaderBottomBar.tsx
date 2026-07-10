@@ -50,7 +50,7 @@ export function ReaderBottomBar({
     dragIndexRef.current = val
   }, [])
 
-  const handleSliderCommit = useCallback(() => {
+  const commitDrag = useCallback(() => {
     setIsDragging(false)
     const targetIndex = dragIndexRef.current
     if (targetIndex !== currentChapterIndex && targetIndex >= 0 && targetIndex < chapters.length) {
@@ -61,15 +61,25 @@ export function ReaderBottomBar({
   const handleSliderStart = useCallback(() => {
     setIsDragging(true)
     setDragValue(currentChapterIndex)
-  }, [currentChapterIndex])
+
+    // Capture commit on document-level mouseup/touchend so it fires even if pointer leaves the input
+    const onCommit = () => {
+      document.removeEventListener('mouseup', onCommit)
+      document.removeEventListener('touchend', onCommit)
+      commitDrag()
+    }
+    document.addEventListener('mouseup', onCommit)
+    document.addEventListener('touchend', onCommit)
+  }, [currentChapterIndex, commitDrag])
 
   const chapterName = isDragging
     ? chapters[dragValue]?.title || `Chapter ${chapters[dragValue]?.number || '?'}`
     : currentChapterTitle
 
   // Progress as percentage
+  const effectiveIndex = isDragging ? dragValue : currentChapterIndex
   const progress = chapters.length > 1
-    ? Math.round((currentChapterIndex / (chapters.length - 1)) * 100)
+    ? Math.round((effectiveIndex / (chapters.length - 1)) * 100)
     : 0
 
   return (
@@ -127,8 +137,6 @@ export function ReaderBottomBar({
                   onChange={handleSliderChange}
                   onMouseDown={handleSliderStart}
                   onTouchStart={handleSliderStart}
-                  onMouseUp={handleSliderCommit}
-                  onTouchEnd={handleSliderCommit}
                   className="w-full h-1.5 appearance-none bg-text-muted/20 rounded-full accent-[hsl(var(--accent))] cursor-pointer"
                   aria-label="Chapter navigation"
                 />

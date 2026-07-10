@@ -84,7 +84,7 @@ function ImageZoom({ src, alt, onClose }: { src: string; alt?: string; onClose: 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 2) {
       setIsPinching(true)
-      touchStart.current.dist = getTouchDist(e.touches)
+      touchStart.current.dist = getTouchDist(e.touches as unknown as TouchList)
       return
     }
     if (e.touches.length === 1 && scale > 1) {
@@ -98,7 +98,7 @@ function ImageZoom({ src, alt, onClose }: { src: string; alt?: string; onClose: 
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
     if (isPinching && e.touches.length === 2) {
-      const newDist = getTouchDist(e.touches)
+      const newDist = getTouchDist(e.touches as unknown as TouchList)
       const ratio = newDist / (touchStart.current.dist || 1)
       setScale(Math.max(0.5, Math.min(5, ratio)))
       return

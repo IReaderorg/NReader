@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import React, { Suspense } from 'react'
 import { Layout } from './components/Layout'
 import { ThemeProvider } from './components/ThemeProvider'
@@ -6,7 +6,6 @@ import { OnboardingGuard } from './components/OnboardingGuard'
 import { SkipToContent } from './hooks/useAccessibility'
 
 // Eager imports for critical-first-load pages
-import { HomePage } from './pages/HomePage'
 import { OnboardingPage } from './pages/OnboardingPage'
 
 // Lazy-loaded pages for code splitting (named exports → default via .then)
@@ -31,6 +30,10 @@ const AppearanceSettingsPage = React.lazy(() => import('./pages/AppearanceSettin
 const SecuritySettingsPage = React.lazy(() => import('./pages/SecuritySettingsPage').then(m => ({ default: m.SecuritySettingsPage })))
 const NetworkSettingsPage = React.lazy(() => import('./pages/NetworkSettingsPage').then(m => ({ default: m.NetworkSettingsPage })))
 const AdvancedSettingsPage = React.lazy(() => import('./pages/AdvancedSettingsPage').then(m => ({ default: m.AdvancedSettingsPage })))
+const GeneralSettingsPage = React.lazy(() => import('./pages/GeneralSettingsPage').then(m => ({ default: m.GeneralSettingsPage })))
+const DownloadSettingsPage = React.lazy(() => import('./pages/DownloadSettingsPage').then(m => ({ default: m.DownloadSettingsPage })))
+const StoragePage = React.lazy(() => import('./pages/StoragePage').then(m => ({ default: m.StoragePage })))
+const SourceSettingsPage = React.lazy(() => import('./pages/SourceSettingsPage').then(m => ({ default: m.SourceSettingsPage })))
 const AboutPage = React.lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })))
 const ReadingStatsPage = React.lazy(() => import('./pages/ReadingStatsPage').then(m => ({ default: m.ReadingStatsPage })))
 const StreaksDetailPage = React.lazy(() => import('./pages/StreaksPage').then(m => ({ default: m.StreaksDetailPage })))
@@ -56,7 +59,7 @@ export function App() {
           <Routes>
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route element={<Layout />}>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/" element={<Navigate to="/library" replace />} />
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/sources" element={<SourcesPage />} />
               <Route path="/sources/:sourceId" element={<BrowsePage />} />
@@ -74,6 +77,10 @@ export function App() {
               <Route path="/settings/appearance" element={<AppearanceSettingsPage />} />
               <Route path="/settings/security" element={<SecuritySettingsPage />} />
               <Route path="/settings/network" element={<NetworkSettingsPage />} />
+              <Route path="/settings/general" element={<GeneralSettingsPage />} />
+              <Route path="/settings/download" element={<DownloadSettingsPage />} />
+              <Route path="/settings/storage" element={<StoragePage />} />
+              <Route path="/settings/sources" element={<SourceSettingsPage />} />
               <Route path="/settings/advanced" element={<AdvancedSettingsPage />} />
               <Route path="/more" element={<MorePage />} />
               <Route path="/backup" element={<BackupPage />} />

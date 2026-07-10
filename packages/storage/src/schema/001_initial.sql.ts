@@ -5,25 +5,27 @@ export const migration_001: Migration = {
   name: 'initial',
   sql: `
     CREATE TABLE IF NOT EXISTS library (
-      id TEXT PRIMARY KEY,
-      source_id TEXT NOT NULL,
-      manga_id TEXT NOT NULL,
-      title TEXT NOT NULL,
-      cover_url TEXT,
-      author TEXT,
-      status TEXT,
-      rating REAL,
-      genres TEXT,
-      description TEXT,
-      last_read_at TEXT,
-      chapters_read INTEGER DEFAULT 0,
-      total_chapters INTEGER,
-      score INTEGER,
-      date_added TEXT,
-      date_updated TEXT,
-      category_ids TEXT,
-      UNIQUE(source_id, manga_id)
-    );
+          id TEXT PRIMARY KEY,
+          source_id TEXT NOT NULL,
+          manga_id TEXT NOT NULL,
+          title TEXT NOT NULL,
+          cover_url TEXT,
+          author TEXT,
+          status TEXT,
+          rating REAL,
+          genres TEXT,
+          description TEXT,
+          last_read_at TEXT,
+          chapters_read INTEGER DEFAULT 0,
+          total_chapters INTEGER,
+          score INTEGER,
+          favorited INTEGER DEFAULT 0,
+          archived INTEGER DEFAULT 0,
+          date_added TEXT,
+          date_updated TEXT,
+          category_ids TEXT,
+          UNIQUE(source_id, manga_id)
+        );
 
     CREATE TABLE IF NOT EXISTS categories (
       id TEXT PRIMARY KEY,

@@ -97,7 +97,7 @@ export function ReaderSettingsSheet({ visible, onClose, availableThemes = [] }: 
         <TabBar activeTab={activeTab} onTabChange={setActiveTab} onClose={onClose} />
 
         {/* Tab Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
           {activeTab === 'reader' && <ReaderTab />}
           {activeTab === 'general' && <GeneralTab />}
           {activeTab === 'colors' && <ColorsTab themes={availableThemes} />}

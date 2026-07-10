@@ -19,13 +19,12 @@ import { createStreaksRouter } from './api/streaks.js'
 import { createReadingGoalsRouter } from './api/reading-goals.js'
 import { createReaderPresetsRouter } from './api/reader-presets.js'
 import { createExploreRouter } from './api/explore.js'
-import { statsApp } from './api/stats.js'
+import { createStatsRouter } from './api/stats.js'
 import { BackupService } from './backup/backup-service.js'
 import { AutoBackupScheduler } from './backup/auto-backup-scheduler.js'
 import { proxyApp } from './api/proxy.js'
 import { NodeVmSandbox } from '@ireader/plugin-system'
 import { PluginService } from './plugins/plugin-service.js'
-import { MockPluginService } from './plugins/mock-plugin-service.js'
 import { createDatabase, runMigrations, migration_001, migration_002, migration_003 } from '@ireader/storage'
 import { migration_004 } from '@ireader/storage'
 import { SqliteLibraryRepository, SqliteHistoryRepository, SqliteSettingsRepository, SqliteDownloadRepository, SqliteGlossaryRepository } from '@ireader/storage'
@@ -64,21 +63,20 @@ export async function startApp(): Promise<Hono> {
     pluginService = new PluginService(pluginsDir, new NodeVmSandbox())
     await pluginService.start()
     console.log(`Plugin service active, watching ${pluginsDir}`)
-    if (pluginService.getAllPlugins().length === 0) {
-      console.log('No plugins found on disk, falling back to mock plugin service')
-      const mock = new MockPluginService()
-      sourcesRouter = createSourcesRouter(mock as any)
-    } else {
-      sourcesRouter = createSourcesRouter(pluginService)
-    }
+    sourcesRouter = createSourcesRouter(pluginService)
   } catch (err) {
-    console.warn('Plugin service unavailable, using mock:', err instanceof Error ? err.message : err)
-    const mock = new MockPluginService()
-    sourcesRouter = createSourcesRouter(mock as any)
+    console.warn('Plugin service unavailable:', err instanceof Error ? err.message : err)
+    // Use a minimal router that returns empty
+    sourcesRouter = createSourcesRouter({
+      getAllPlugins: () => [],
+      getPlugin: () => undefined,
+      executePluginMethod: async () => { throw new Error('Plugin service unavailable') },
+      isIReaderPlugin: () => false,
+    })
   }
 
   app.route('/api/v1/sources', sourcesRouter)
-  app.route('/api/v1/explore', createExploreRouter(pluginService ?? new MockPluginService() as any))
+  app.route('/api/v1/explore', createExploreRouter(pluginService ?? { getAllPlugins: () => [], getPlugin: () => undefined, executePluginMethod: async () => { throw new Error('Plugin service unavailable') }, isIReaderPlugin: () => false } as any))
   app.route('/api/v1', healthApp)
   app.route('/api/v1/library', createLibraryRouter(libraryRepo))
   app.route('/api/v1/history', createHistoryRouter(historyRepo))
@@ -92,32 +90,25 @@ export async function startApp(): Promise<Hono> {
   app.route('/api/v1/auto-backup', createAutoBackupRouter(autoBackupScheduler))
   app.route('/api/v1/reader/themes', createReaderThemesRouter(settingsRepo))
   app.route('/api/v1/fonts', createFontsRouter(settingsRepo))
-  app.route('/api/v1/reports', createReportRouter())
-  app.route('/api/v1/bookmarks', createBookmarkRouter())
-  app.route('/api/v1/reading-stats', createReadingStatsRouter())
-  app.route('/api/v1/streaks', createStreaksRouter())
-  app.route('/api/v1/goals', createReadingGoalsRouter())
+  app.route('/api/v1/reports', createReportRouter(settingsRepo))
+  app.route('/api/v1/bookmarks', createBookmarkRouter(settingsRepo))
+  app.route('/api/v1/reading-stats', createReadingStatsRouter(settingsRepo))
+  app.route('/api/v1/streaks', createStreaksRouter(settingsRepo))
+  app.route('/api/v1/goals', createReadingGoalsRouter(settingsRepo))
   app.route('/api/v1/reader/presets', createReaderPresetsRouter(settingsRepo))
 
+  // Plugins list from plugin service
   app.get('/api/v1/plugins', (c) => {
-    if (pluginService && pluginService.getAllPlugins().length > 0) return c.json(pluginService.getAllPlugins())
-    return c.json([
-      { id: 'demo', name: 'Demo Source', lang: 'en', baseUrl: 'https://demo.local', version: '1.0.0', capabilities: ['popular', 'search', 'mangaDetail', 'chapters', 'pages'] },
-      { id: 'manganato', name: 'Manganato', lang: 'en', baseUrl: 'https://manganato.com', version: '1.0.0', capabilities: ['popular', 'search', 'mangaDetail', 'chapters', 'pages'] },
-      { id: 'mangadex', name: 'MangaDex', lang: 'en', baseUrl: 'https://mangadex.org', version: '1.0.0', capabilities: ['popular', 'search', 'mangaDetail', 'chapters', 'pages'] },
-    ])
+    if (pluginService) return c.json(pluginService.getAllPlugins())
+    return c.json([])
   })
 
   app.get('/api/v1/plugins/marketplace', (c) => {
-    return c.json([
-      { id: 'manganato', name: 'Manganato', description: 'Read manga from Manganato.com', type: 'source', version: '1.0.0', author: 'IReader', installUrl: '/plugins/manganato/source.js', downloads: 1520, rating: 4.5, updatedAt: '2026-06-15T10:00:00Z' },
-      { id: 'mangadex', name: 'MangaDex', description: 'Read manga from MangaDex.org', type: 'source', version: '1.0.0', author: 'IReader', installUrl: '/plugins/mangadex/source.js', downloads: 2340, rating: 4.8, updatedAt: '2026-06-20T10:00:00Z' },
-      { id: 'dark-theme', name: 'Deep Dark', description: 'AMOLED-optimized dark theme with custom colors', type: 'theme', version: '1.0.0', author: 'ThemeStudio', installUrl: '/themes/dark-theme/theme.js', downloads: 890, rating: 4.2, updatedAt: '2026-07-01T10:00:00Z' },
-    ])
+    return c.json([])
   })
 
   app.route('/api/v1/proxy', proxyApp)
-  app.route('/api/v1', statsApp)
+  app.route('/api/v1', createStatsRouter(libraryRepo, downloadRepo))
 
   return app
 }

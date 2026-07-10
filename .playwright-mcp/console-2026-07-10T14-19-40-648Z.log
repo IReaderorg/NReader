@@ -260,3 +260,115 @@ Visit https://react.dev/link/error-boundaries to learn more about error boundari
 [10909877ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+17:0
 [10909881ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+18:0
 [10911048ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+Manga:0
+[10961534ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+Manga:0
+[10991248ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+1:0
+[10991341ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+2:0
+[10991345ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+3:0
+[10991353ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+4:0
+[10991358ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+5:0
+[10991363ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+6:0
+[10992140ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+7:0
+[10992244ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+8:0
+[10992252ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+9:0
+[10992269ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+10:0
+[10992276ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+11:0
+[10992283ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+12:0
+[10993007ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+13:0
+[10993121ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+14:0
+[10993137ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+15:0
+[10993149ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+16:0
+[10993183ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+17:0
+[10993186ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+18:0
+[10993954ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+1:0
+[11013845ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+1:0
+[11024997ms] [WARNING] WebSocket connection to 'ws://localhost:5173/ws' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/src/hooks/useWebSocket.ts:73
+[11025034ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11055012ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11085016ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11115020ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11145024ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11175029ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11205032ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11235042ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11265051ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11295057ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11325063ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11355066ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11385071ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Connection closed before receiving a handshake response @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11415076ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Connection closed before receiving a handshake response @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11445082ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Connection closed before receiving a handshake response @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11475089ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Connection closed before receiving a handshake response @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11505122ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11535125ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11565135ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11595139ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11625150ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11655155ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11685164ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11715174ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11745180ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11775191ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11805196ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11835200ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11865207ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11895228ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11925233ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11955240ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[11985246ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12015250ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12045254ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12075258ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12105264ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12135270ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12165273ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12195279ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12225282ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12255285ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12285288ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12315291ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12345294ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12375349ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12405397ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12435416ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12465420ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12495428ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12525432ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12555438ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12585442ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12615444ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12645455ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12675464ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12705471ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12735475ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12765478ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12795482ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12825486ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12855489ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12885496ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12915501ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12945504ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[12975511ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13005516ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13035519ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13065522ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13095529ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13125533ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13155536ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13185539ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13215542ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13245545ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13275549ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13305552ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13335594ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13365601ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13395608ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13425612ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13455615ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13485624ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13515629ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Connection closed before receiving a handshake response @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13545636ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Connection closed before receiving a handshake response @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13575643ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Connection closed before receiving a handshake response @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13605650ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Connection closed before receiving a handshake response @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13635658ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Connection closed before receiving a handshake response @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13665664ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Connection closed before receiving a handshake response @ http://localhost:5173/src/hooks/useWebSocket.ts:29
+[13695672ms] [ERROR] WebSocket connection to 'ws://localhost:5173/ws' failed: Connection closed before receiving a handshake response @ http://localhost:5173/src/hooks/useWebSocket.ts:29

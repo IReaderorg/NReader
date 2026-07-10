@@ -1,37 +1,49 @@
 import { Hono } from 'hono'
+import type { SettingsRepository } from '@ireader/core'
 
-const bookmarks: Set<string> = new Set()
+function loadBookmarks(repo: SettingsRepository): Promise<string[]> {
+  return repo.get('bookmarks').then(v => {
+    if (!v || typeof v !== 'string') return []
+    try { return JSON.parse(v) as string[] } catch { return [] }
+  })
+}
 
-export function createBookmarkRouter(): Hono {
+function saveBookmarks(repo: SettingsRepository, bookmarks: string[]): Promise<void> {
+  return repo.set('bookmarks', JSON.stringify(bookmarks))
+}
+
+export function createBookmarkRouter(repo: SettingsRepository): Hono {
   const app = new Hono()
 
-  // Toggle bookmark for a chapter
   app.post('/toggle', async (c) => {
     try {
       const body = await c.req.json<{ chapterId: string }>()
-
       if (!body.chapterId) {
         return c.json({ error: 'chapterId is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
       }
 
-      const isBookmarked = bookmarks.has(body.chapterId)
-      if (isBookmarked) {
-        bookmarks.delete(body.chapterId)
+      const bookmarks = await loadBookmarks(repo)
+      const idx = bookmarks.indexOf(body.chapterId)
+      let bookmarked: boolean
+      if (idx >= 0) {
+        bookmarks.splice(idx, 1)
+        bookmarked = false
       } else {
-        bookmarks.add(body.chapterId)
+        bookmarks.push(body.chapterId)
+        bookmarked = true
       }
-
-      return c.json({ bookmarked: !isBookmarked })
+      await saveBookmarks(repo, bookmarks)
+      return c.json({ bookmarked })
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to toggle bookmark'
       return c.json({ error: msg, code: 'BOOKMARK_ERROR', status: 500 }, 500)
     }
   })
 
-  // Check bookmark status
-  app.get('/status/:chapterId', (c) => {
+  app.get('/status/:chapterId', async (c) => {
     const chapterId = c.req.param('chapterId')
-    return c.json({ bookmarked: bookmarks.has(chapterId) })
+    const bookmarks = await loadBookmarks(repo)
+    return c.json({ bookmarked: bookmarks.includes(chapterId) })
   })
 
   return app

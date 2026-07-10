@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import type { SettingsRepository } from '@ireader/core'
 
 interface ReadingStats {
   mangaId: string
@@ -8,16 +9,22 @@ interface ReadingStats {
   lastReadAt: string
 }
 
-const statsMap = new Map<string, ReadingStats>()
+function loadStats(repo: SettingsRepository): Promise<ReadingStats[]> {
+  return repo.get('reading_stats').then(v => {
+    if (!v || typeof v !== 'string') return []
+    try { return JSON.parse(v) as ReadingStats[] } catch { return [] }
+  })
+}
 
-export function createReadingStatsRouter(): Hono {
+function saveStats(repo: SettingsRepository, stats: ReadingStats[]): Promise<void> {
+  return repo.set('reading_stats', JSON.stringify(stats))
+}
+
+export function createReadingStatsRouter(repo: SettingsRepository): Hono {
   const app = new Hono()
 
-  // Time-series stats
-  app.get('/daily', (c: any) => {
-    const from = c.req.query('from')
-    const to = c.req.query('to')
-    const allStats = Array.from(statsMap.values())
+  app.get('/daily', async (c) => {
+    const allStats = await loadStats(repo)
     const grouped: Record<string, { totalTimeMs: number; chaptersRead: number; count: number }> = {}
 
     for (const s of allStats) {
@@ -37,8 +44,8 @@ export function createReadingStatsRouter(): Hono {
     })
   })
 
-  app.get('/weekly', (c: any) => {
-    const allStats = Array.from(statsMap.values())
+  app.get('/weekly', async (c) => {
+    const allStats = await loadStats(repo)
     const grouped: Record<string, { totalTimeMs: number; chaptersRead: number; count: number }> = {}
 
     for (const s of allStats) {
@@ -60,8 +67,8 @@ export function createReadingStatsRouter(): Hono {
     })
   })
 
-  app.get('/monthly', (c: any) => {
-    const allStats = Array.from(statsMap.values())
+  app.get('/monthly', async (c) => {
+    const allStats = await loadStats(repo)
     const grouped: Record<string, { totalTimeMs: number; chaptersRead: number; count: number }> = {}
 
     for (const s of allStats) {
@@ -81,9 +88,8 @@ export function createReadingStatsRouter(): Hono {
     })
   })
 
-  // Library insights
-  app.get('/insights', (c: any) => {
-    const allStats = Array.from(statsMap.values())
+  app.get('/insights', async (c) => {
+    const allStats = await loadStats(repo)
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
@@ -102,9 +108,9 @@ export function createReadingStatsRouter(): Hono {
     })
   })
 
-  // Recommendations
-  app.get('/recommendations', (c: any) => {
-    const sorted = Array.from(statsMap.values())
+  app.get('/recommendations', async (c) => {
+    const allStats = await loadStats(repo)
+    const sorted = allStats
       .sort((a, b) => b.chaptersRead - a.chaptersRead)
       .slice(0, 10)
       .map(s => ({
@@ -117,29 +123,28 @@ export function createReadingStatsRouter(): Hono {
     return c.json(sorted)
   })
 
-  // Get stats for a manga
-  app.get('/:mangaId', (c: any) => {
+  app.get('/:mangaId', async (c) => {
     const mangaId = c.req.param('mangaId')
-    const stats = statsMap.get(mangaId)
+    const allStats = await loadStats(repo)
+    const stats = allStats.find(s => s.mangaId === mangaId)
     if (!stats) {
       return c.json({ mangaId, sourceId: '', totalTimeMs: 0, chaptersRead: 0, lastReadAt: '' })
     }
     return c.json(stats)
   })
 
-  // Get all stats
-  app.get('/', (c: any) => {
-    return c.json(Array.from(statsMap.values()))
+  app.get('/', async (c) => {
+    return c.json(await loadStats(repo))
   })
 
-  // Record/update stats
-  app.post('/', async (c: any) => {
+  app.post('/', async (c) => {
     const body = await c.req.json()
     if (!body.mangaId || !body.sourceId) {
       return c.json({ error: 'mangaId and sourceId are required', code: 'VALIDATION_ERROR', status: 400 }, 400)
     }
 
-    const existing = statsMap.get(body.mangaId)
+    const allStats = await loadStats(repo)
+    const existing = allStats.find(s => s.mangaId === body.mangaId)
     const now = new Date().toISOString()
 
     const stats: ReadingStats = {
@@ -150,7 +155,11 @@ export function createReadingStatsRouter(): Hono {
       lastReadAt: now,
     }
 
-    statsMap.set(body.mangaId, stats)
+    const idx = allStats.findIndex(s => s.mangaId === body.mangaId)
+    if (idx >= 0) allStats[idx] = stats
+    else allStats.push(stats)
+
+    await saveStats(repo, allStats)
     return c.json(stats, 201)
   })
 

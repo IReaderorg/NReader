@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
+import type { SettingsRepository } from '@ireader/core'
 
-const reportLogs: Array<{
+interface ReportEntry {
   id: string
   sourceId: string
   chapterId: string
@@ -8,12 +9,27 @@ const reportLogs: Array<{
   category: string
   description: string
   reportedAt: string
-}> = []
+}
 
-export function createReportRouter(): Hono {
+function loadReports(repo: SettingsRepository): Promise<ReportEntry[]> {
+  return repo.get('reports').then(v => {
+    if (!v || typeof v !== 'string') return []
+    try { return JSON.parse(v) as ReportEntry[] } catch { return [] }
+  })
+}
+
+function saveReports(repo: SettingsRepository, reports: ReportEntry[]): Promise<void> {
+  return repo.set('reports', JSON.stringify(reports))
+}
+
+const VALID_CATEGORIES = [
+  'missing_content', 'incorrect_content', 'formatting_issues',
+  'translation_errors', 'duplicate_content', 'other',
+]
+
+export function createReportRouter(repo: SettingsRepository): Hono {
   const app = new Hono()
 
-  // Submit a chapter report
   app.post('/', async (c) => {
     try {
       const body = await c.req.json<{
@@ -32,20 +48,15 @@ export function createReportRouter(): Hono {
         }, 400)
       }
 
-      const validCategories = [
-        'missing_content', 'incorrect_content', 'formatting_issues',
-        'translation_errors', 'duplicate_content', 'other',
-      ]
-
-      if (!validCategories.includes(body.category)) {
+      if (!VALID_CATEGORIES.includes(body.category)) {
         return c.json({
-          error: `Invalid category. Must be one of: ${validCategories.join(', ')}`,
+          error: `Invalid category. Must be one of: ${VALID_CATEGORIES.join(', ')}`,
           code: 'VALIDATION_ERROR',
           status: 400,
         }, 400)
       }
 
-      const report = {
+      const report: ReportEntry = {
         id: `report_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         sourceId: body.sourceId,
         chapterId: body.chapterId,
@@ -55,7 +66,9 @@ export function createReportRouter(): Hono {
         reportedAt: new Date().toISOString(),
       }
 
-      reportLogs.push(report)
+      const reports = await loadReports(repo)
+      reports.push(report)
+      await saveReports(repo, reports)
       console.log(`[Report] New report: ${report.id} — ${report.category} for chapter "${report.chapterName}"`)
 
       return c.json({ success: true, reportId: report.id }, 201)
@@ -65,9 +78,9 @@ export function createReportRouter(): Hono {
     }
   })
 
-  // Get recent reports (admin/debug)
-  app.get('/', (c) => {
-    return c.json(reportLogs.slice(-50))
+  app.get('/', async (c) => {
+    const reports = await loadReports(repo)
+    return c.json(reports.slice(-50))
   })
 
   return app

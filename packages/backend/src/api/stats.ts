@@ -1,33 +1,34 @@
 import { Hono } from 'hono'
+import type { LibraryRepository, DownloadRepository } from '@ireader/core'
 
-const app = new Hono()
+export function createStatsRouter(libraryRepo: LibraryRepository, downloadRepo: DownloadRepository): Hono {
+  const app = new Hono()
 
-app.get('/stats', async (c) => {
-  try {
-    const [totalBooks, totalDownloads, storageInfo] = await Promise.all([
-      fetch('http://localhost:3000/api/v1/library').then(r => r.ok ? r.json() : []),
-      fetch('http://localhost:3000/api/v1/downloads').then(r => r.ok ? r.json() : []),
-      fetch('http://localhost:3000/api/v1/downloads/storage/stats').then(r => r.ok ? r.json() : { totalBytes: 0, totalChapters: 0, mangaCount: 0 }),
-    ])
+  app.get('/stats', async (c) => {
+    try {
+      const [books, downloads, storageInfo] = await Promise.all([
+        libraryRepo.getAll(),
+        downloadRepo.getAll(),
+        downloadRepo.getStorageStats(),
+      ])
 
-    const chapters = Array.isArray(totalBooks)
-      ? totalBooks.reduce((sum: number, b: any) => sum + (b.totalChapters || b.chaptersRead || 0), 0)
-      : 0
+      const chapters = books.reduce((sum, b) => sum + (b.totalChapters || b.chaptersRead || 0), 0)
 
-    return c.json({
-      totalBooks: Array.isArray(totalBooks) ? totalBooks.length : 0,
-      totalChapters: chapters,
-      totalDownloads: Array.isArray(totalDownloads) ? totalDownloads.length : 0,
-      storageUsedBytes: (storageInfo as any).totalBytes ?? 0,
-    })
-  } catch {
-    return c.json({
-      totalBooks: 0,
-      totalChapters: 0,
-      totalDownloads: 0,
-      storageUsedBytes: 0,
-    })
-  }
-})
+      return c.json({
+        totalBooks: books.length,
+        totalChapters: chapters,
+        totalDownloads: downloads.length,
+        storageUsedBytes: storageInfo.totalBytes,
+      })
+    } catch {
+      return c.json({
+        totalBooks: 0,
+        totalChapters: 0,
+        totalDownloads: 0,
+        storageUsedBytes: 0,
+      })
+    }
+  })
 
-export { app as statsApp }
+  return app
+}

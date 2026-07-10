@@ -5,30 +5,77 @@ import type {
   DownloadJob, PluginMeta, GlossaryEntry
 } from '@ireader/core'
 
-export class BackupService {
-  constructor(private db: SQLiteDriver, private getData: () => Promise<BackupPayload>) {}
+export const BACKUP_FORMAT_VERSION = 2
 
-  async exportBackup(includeCovers = false): Promise<Uint8Array> {
+export interface BackupMeta {
+  version: number
+  schemaVersion: number
+  exportedAt: string
+  createdAt: string
+  appName: string
+  sections: string[]
+}
+
+export function migrateBackupV1ToV2(data: Record<string, unknown>): Record<string, unknown> {
+  // V1 didn't have version field in data; we add it
+  data.version = BACKUP_FORMAT_VERSION
+  data.createdAt = data.exportedAt ?? new Date().toISOString()
+  return data
+}
+
+export type BackupSection = 'library' | 'categories' | 'history' | 'settings' | 'downloads' | 'glossary'
+
+export class BackupService {
+  constructor(
+    private db: SQLiteDriver,
+    private getData: () => Promise<BackupPayload>,
+    private onProgress?: (stage: string, pct: number) => void
+  ) {}
+
+  async exportBackup(includeCovers = false, sections?: BackupSection[]): Promise<Uint8Array> {
     const data = await this.getData()
     const zip = new JSZip()
+    const allSections: BackupSection[] = sections ?? ['library', 'categories', 'history', 'settings', 'downloads', 'glossary']
+
+    this.onProgress?.('export', 5)
 
     // Metadata
-    zip.file('metadata.json', JSON.stringify({
-      version: data.version,
+    const meta: BackupMeta = {
+      version: BACKUP_FORMAT_VERSION,
       schemaVersion: data.schemaVersion,
       exportedAt: data.exportedAt,
+      createdAt: new Date().toISOString(),
       appName: 'IReader-Next',
-    }, null, 2))
+      sections: allSections,
+    }
+    zip.file('metadata.json', JSON.stringify(meta, null, 2))
 
-    // DB tables
+    this.onProgress?.('export', 15)
+
+    // DB tables (selective)
     const tables = zip.folder('db-tables')!
-    tables.file('library.json', JSON.stringify(data.library, null, 2))
-    tables.file('categories.json', JSON.stringify(data.categories, null, 2))
-    tables.file('history.json', JSON.stringify(data.history, null, 2))
-    tables.file('settings.json', JSON.stringify(data.settings, null, 2))
-    tables.file('downloads.json', JSON.stringify(data.downloads, null, 2))
-    tables.file('glossary.json', JSON.stringify(data.glossary, null, 2))
+    const sectionMap: Record<BackupSection, { data: unknown; file: string }> = {
+      library: { data: data.library, file: 'library.json' },
+      categories: { data: data.categories, file: 'categories.json' },
+      history: { data: data.history, file: 'history.json' },
+      settings: { data: data.settings, file: 'settings.json' },
+      downloads: { data: data.downloads, file: 'downloads.json' },
+      glossary: { data: data.glossary, file: 'glossary.json' },
+    }
+
+    let step = 0
+    for (const section of allSections) {
+      const entry = sectionMap[section]
+      if (entry) {
+        tables.file(entry.file, JSON.stringify(entry.data, null, 2))
+      }
+      step++
+      this.onProgress?.('export', 15 + (step / allSections.length) * 60)
+    }
+
+    // Plugins
     tables.file('plugins.json', JSON.stringify(data.plugins, null, 2))
+    this.onProgress?.('export', 80)
 
     // Covers (optional)
     if (includeCovers && data.covers) {
@@ -48,37 +95,51 @@ export class BackupService {
       }
     }
 
-    return zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' })
+    this.onProgress?.('export', 95)
+
+    const result = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' })
+    this.onProgress?.('export', 100)
+    return result
   }
 
-  async importBackup(zipData: Uint8Array, strategy: 'merge' | 'replace' = 'merge'): Promise<{ tables: string[]; entries: number }> {
+  async importBackup(
+    zipData: Uint8Array,
+    strategy: 'merge' | 'replace' = 'merge',
+    sections?: BackupSection[]
+  ): Promise<{ tables: string[]; entries: number }> {
     const zip = await JSZip.loadAsync(zipData)
+    this.onProgress?.('import', 10)
 
     // Validate metadata
     const metaFile = zip.file('metadata.json')
     if (!metaFile) throw new Error('Invalid backup: missing metadata.json')
     const metaText = await metaFile.async('string')
-    const metadata = JSON.parse(metaText)
-    if (!metadata.version || !metadata.exportedAt) {
+    let metadata = JSON.parse(metaText)
+
+    // Migration: if version is 1 or missing, migrate
+    if (!metadata.version || metadata.version < BACKUP_FORMAT_VERSION) {
+      metadata = migrateBackupV1ToV2(metadata)
+    }
+
+    if (!metadata.createdAt) {
       throw new Error('Invalid backup: incomplete metadata')
     }
+
+    this.onProgress?.('import', 20)
 
     const tables: string[] = []
     let totalEntries = 0
 
-    // Convert camelCase keys to snake_case for SQL column names
     function toSnakeCase(key: string): string {
       return key.replace(/[A-Z]/g, (c) => '_' + c.toLowerCase())
     }
 
-    // Serialize non-primitive values for SQLite (arrays/objects → JSON string)
     function toSqlValue(val: unknown): unknown {
       if (val === null || val === undefined) return null
       if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') return val
       return JSON.stringify(val)
     }
 
-    // Helper to read a JSON table from the ZIP
     async function readTable<T>(name: string): Promise<T[]> {
       const file = zip.file(`db-tables/${name}`)
       if (!file) return []
@@ -86,18 +147,25 @@ export class BackupService {
       return JSON.parse(text) as T[]
     }
 
-    // Import tables (merge appends, replace clears first)
-    const tableDefs: { name: string; table: string; data: () => Promise<any[]>; clearSql: string }[] = [
-      { name: 'library.json', table: 'library', data: () => readTable<LibraryEntry>('library.json'), clearSql: 'DELETE FROM library' },
-      { name: 'categories.json', table: 'categories', data: () => readTable<Category>('categories.json'), clearSql: 'DELETE FROM categories' },
-      { name: 'history.json', table: 'history', data: () => readTable<HistoryEntry>('history.json'), clearSql: 'DELETE FROM history' },
-      { name: 'settings.json', table: 'settings', data: () => readTable<Setting>('settings.json'), clearSql: 'DELETE FROM settings' },
-      { name: 'downloads.json', table: 'downloads', data: () => readTable<DownloadJob>('downloads.json'), clearSql: 'DELETE FROM downloads' },
-      { name: 'glossary.json', table: 'glossary', data: () => readTable<GlossaryEntry>('glossary.json'), clearSql: 'DELETE FROM glossary' },
-      { name: 'plugins.json', table: 'plugins', data: () => readTable<PluginMeta>('plugins.json'), clearSql: 'DELETE FROM plugins' },
+    const allSections: BackupSection[] = sections ?? ['library', 'categories', 'history', 'settings', 'downloads', 'glossary']
+    const importSections = metadata.sections
+      ? allSections.filter((s: BackupSection) => metadata.sections.includes(s))
+      : allSections
+
+    const tableDefs: { name: string; table: string; data: () => Promise<any[]>; clearSql: string; section: BackupSection }[] = [
+      { name: 'library.json', table: 'library', data: () => readTable<LibraryEntry>('library.json'), clearSql: 'DELETE FROM library', section: 'library' },
+      { name: 'categories.json', table: 'categories', data: () => readTable<Category>('categories.json'), clearSql: 'DELETE FROM categories', section: 'categories' },
+      { name: 'history.json', table: 'history', data: () => readTable<HistoryEntry>('history.json'), clearSql: 'DELETE FROM history', section: 'history' },
+      { name: 'settings.json', table: 'settings', data: () => readTable<Setting>('settings.json'), clearSql: 'DELETE FROM settings', section: 'settings' },
+      { name: 'downloads.json', table: 'downloads', data: () => readTable<DownloadJob>('downloads.json'), clearSql: 'DELETE FROM downloads', section: 'downloads' },
+      { name: 'glossary.json', table: 'glossary', data: () => readTable<GlossaryEntry>('glossary.json'), clearSql: 'DELETE FROM glossary', section: 'glossary' },
+      { name: 'plugins.json', table: 'plugins', data: () => readTable<PluginMeta>('plugins.json'), clearSql: 'DELETE FROM plugins', section: 'glossary' },
     ]
 
+    let step = 0
     for (const td of tableDefs) {
+      if (!importSections.includes(td.section)) continue
+
       const rows = await td.data()
       if (rows.length === 0) continue
 
@@ -119,6 +187,8 @@ export class BackupService {
 
       tables.push(td.table)
       totalEntries += rows.length
+      step++
+      this.onProgress?.('import', 20 + (step / tableDefs.length) * 60)
     }
 
     // Import plugin source files
@@ -141,6 +211,7 @@ export class BackupService {
       await Promise.all(pluginPromises)
     }
 
+    this.onProgress?.('import', 100)
     return { tables, entries: totalEntries }
   }
 }

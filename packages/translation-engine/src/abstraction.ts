@@ -5,13 +5,15 @@ export interface TranslationResult {
   detectedLang?: string
 }
 
-export type TranslationEngineType = 'deepl' | 'ai' | 'mock'
+export type TranslationEngineType = 'deepl' | 'ai' | 'mock' | 'openai' | 'deepseek' | 'libre' | 'ollama' | 'openrouter'
 
 export interface TranslationEngineConfig {
   type: TranslationEngineType
   apiKey?: string
   targetLang?: string
   sourceLang?: string
+  baseUrl?: string
+  model?: string
 }
 
 export interface TranslationEngine {

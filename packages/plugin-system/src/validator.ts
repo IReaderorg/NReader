@@ -3,6 +3,10 @@ export interface ValidationResult {
   errors: string[]
 }
 
+/**
+ * Validate a plugin object.
+ * Supports both ireader-next format (with info property) and IReader format.
+ */
 export function validatePlugin(plugin: unknown): ValidationResult {
   const errors: string[] = []
 
@@ -12,6 +16,15 @@ export function validatePlugin(plugin: unknown): ValidationResult {
 
   const p = plugin as Record<string, unknown>
 
+  // Check for IReader-source format first (has getMangaList or id as number)
+  if (typeof p.getMangaList === 'function' || typeof p.fetchPopularManga === 'function') {
+    return { valid: true, errors: [] }
+  }
+  if (typeof p.id === 'number' && typeof p.name === 'string') {
+    return { valid: true, errors: [] }
+  }
+
+  // Standard ireader-next format: requires info object
   if (typeof p.info !== 'object' || p.info === null) {
     errors.push('plugin.info must be a non-null object')
     return { valid: false, errors }
@@ -19,8 +32,8 @@ export function validatePlugin(plugin: unknown): ValidationResult {
 
   const info = p.info as Record<string, unknown>
 
-  if (typeof info.id !== 'string') {
-    errors.push('plugin.info.id must be a string')
+  if (typeof info.id !== 'string' && typeof info.id !== 'number') {
+    errors.push('plugin.info.id must be a string or number')
   }
 
   if (typeof info.name !== 'string') {
@@ -37,8 +50,12 @@ export function validatePlugin(plugin: unknown): ValidationResult {
     }
   }
 
+  // popular() is optional for IReader sources; only required for native format
   if (typeof p.popular !== 'function') {
-    errors.push('plugin.popular must be a function')
+    // Not an error if it has IReader methods
+    if (!p.getMangaList && !p.fetchPopularManga) {
+      errors.push('plugin.popular must be a function')
+    }
   }
 
   return { valid: errors.length === 0, errors }

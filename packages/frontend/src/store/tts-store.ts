@@ -2,6 +2,14 @@ import { create } from 'zustand'
 import type { TtsEngine, TtsState, TtsVoice, TtsEngineType } from '@ireader/tts-engine'
 import { WebSpeechEngine } from '@ireader/tts-engine'
 
+export type SleepTimerMode = '15min' | '30min' | '60min' | 'end_of_chapter'
+
+interface SleepTimer {
+  active: boolean
+  mode: SleepTimerMode
+  remaining: number // seconds
+}
+
 interface TtsStore {
   engine: TtsEngine | null
   engineType: TtsEngineType
@@ -12,6 +20,8 @@ interface TtsStore {
   pitch: number
   text: string
   charIndex: number
+  currentSentenceIndex: number
+  sleepTimer: SleepTimer
 
   initEngine: (type?: TtsEngineType) => void
   speak: (text: string) => Promise<void>
@@ -22,6 +32,9 @@ interface TtsStore {
   setPitch: (pitch: number) => void
   setVoice: (voiceId: string) => void
   loadVoices: () => Promise<void>
+  setSleepTimer: (mode: SleepTimerMode) => void
+  clearSleepTimer: () => void
+  tickSleepTimer: () => boolean
 }
 
 export const useTtsStore = create<TtsStore>((set, get) => ({
@@ -34,6 +47,8 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
   pitch: 1,
   text: '',
   charIndex: 0,
+  currentSentenceIndex: 0,
+  sleepTimer: { active: false, mode: '15min', remaining: 0 },
 
   initEngine: (type = 'web-speech') => {
     const existing = get().engine
@@ -47,17 +62,22 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
     }
 
     engine.on('statechange', (state) => set({ state }))
-    set({ engine, engineType: type })
+    set({ engine, engineType: type, sleepTimer: { ...get().sleepTimer, active: false } })
     get().loadVoices()
   },
 
   speak: async (text: string) => {
-    const { engine } = get()
+    const { engine, sleepTimer } = get()
     if (!engine) {
       get().initEngine()
     }
     const eng = get().engine!
-    set({ text, charIndex: 0 })
+    set({ text, charIndex: 0, currentSentenceIndex: 0 })
+    // Start sleep timer countdown if active
+    if (sleepTimer.active && sleepTimer.mode !== 'end_of_chapter') {
+      const remaining = getSleepTimerSeconds(sleepTimer.mode)
+      set({ sleepTimer: { ...sleepTimer, remaining } })
+    }
     await eng.speak(text, (charIndex) => set({ charIndex }))
   },
 
@@ -82,5 +102,36 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
     if (!engine) return
     const voices = await engine.getVoices()
     set({ voices })
+  },
+
+  setSleepTimer: (mode: SleepTimerMode) => {
+    const remaining = getSleepTimerSeconds(mode)
+    set({ sleepTimer: { active: true, mode, remaining } })
+  },
+
+  clearSleepTimer: () => {
+    set({ sleepTimer: { active: false, mode: '15min', remaining: 0 } })
+  },
+
+  tickSleepTimer: () => {
+    const { sleepTimer } = get()
+    if (!sleepTimer.active) return false
+    const remaining = sleepTimer.remaining - 1
+    if (remaining <= 0) {
+      get().pause()
+      set({ sleepTimer: { ...sleepTimer, active: false, remaining: 0 } })
+      return true
+    }
+    set({ sleepTimer: { ...sleepTimer, remaining } })
+    return false
   }
 }))
+
+function getSleepTimerSeconds(mode: SleepTimerMode): number {
+  switch (mode) {
+    case '15min': return 900
+    case '30min': return 1800
+    case '60min': return 3600
+    case 'end_of_chapter': return 0
+  }
+}

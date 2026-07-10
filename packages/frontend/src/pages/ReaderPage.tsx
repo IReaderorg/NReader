@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api, type Page, type HistoryEntry } from '../api/client'
-import { useReaderStore } from '../store/reader-store'
+import { useReaderStore, type TextReplacementEntry } from '../store/reader-store'
 import { useHistoryStore } from '../store/history-store'
 import { useTtsStore } from '../store/tts-store'
 import { WebtoonReader, PagerReader, TextReader } from '@ireader/reader-engine'
@@ -16,6 +16,8 @@ import { ReportChapterDialog } from '../components/ReportChapterDialog'
 import { TtsControlSheet } from '../components/TtsControlSheet'
 import { ReadingStatsPanel } from '../components/ReadingStatsPanel'
 import { TranslationPanel } from '../components/TranslationPanel'
+import { ReadingBreakReminder } from '../components/ReadingBreakReminder'
+import { TextReplaceBar } from '../components/TextReplaceBar'
 import type { IssueCategory } from '../components/ReportChapterDialog'
 import type { ReaderThemeColors } from '@ireader/reader-engine'
 
@@ -57,10 +59,11 @@ export function ReaderPage() {
     selectableMode, webviewBg,
     isBookmarked, setBookmarked,
     openChapter,
+    readingBreak,
   } = useReaderStore()
 
   const { recordProgress } = useHistoryStore()
-  const { speak, pause, resume, state: ttsState } = useTtsStore()
+  const { speak, pause, resume, state: ttsState, charIndex } = useTtsStore()
 
   // Data state
   const [pages, setPages] = useState<Page[]>([])
@@ -90,6 +93,12 @@ export function ReaderPage() {
   const [findCurrent, setFindCurrent] = useState(0)
   const findPositionsRef = useRef<number[]>([])
 
+  // Text replace
+  const [replaceVisible, setReplaceVisible] = useState(false)
+
+  // Reading break reminder
+  const [breakReminderVisible, setBreakReminderVisible] = useState(false)
+
   // Reading session timer
   const [sessionStartTime] = useState(() => Date.now())
   const chapterStartTimeRef = useRef(Date.now())
@@ -114,6 +123,48 @@ export function ReaderPage() {
     } catch { /* non-critical */ }
   }, [sourceId, mangaId, chapterId])
 
+  // --- TTS chapter auto-advance: on speech end, go to next chapter ---
+  const wasActiveRef = useRef(false)
+  useEffect(() => {
+    if (ttsState === 'speaking' || ttsState === 'paused') {
+      wasActiveRef.current = true
+      return
+    }
+    if (ttsState === 'idle' && wasActiveRef.current) {
+      wasActiveRef.current = false
+      const store = useTtsStore.getState()
+      if (!store.text) return
+      if (currentChapterIndex < chapters.length - 1) {
+        loadChapter(currentChapterIndex + 1)
+      }
+    }
+  }, [ttsState])
+
+  // --- Text highlighting during TTS ---
+  useEffect(() => {
+    if (ttsState === 'idle') {
+      document.querySelectorAll('.tts-highlight').forEach(el => el.classList.remove('tts-highlight'))
+      return
+    }
+    const container = document.querySelector('[data-reader-content]')
+    if (!container) return
+
+    container.querySelectorAll('.tts-highlight').forEach(el => el.classList.remove('tts-highlight'))
+
+    // Find the paragraph/block containing charIndex
+    const blocks = container.querySelectorAll('p, div, span, h1, h2, h3, h4, h5, h6')
+    let accumulated = 0
+    for (const block of blocks) {
+      const text = block.textContent || ''
+      if (charIndex >= accumulated && charIndex < accumulated + text.length && text.trim()) {
+        block.classList.add('tts-highlight')
+        block.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        break
+      }
+      accumulated += text.length
+    }
+  }, [charIndex, ttsState])
+
   useEffect(() => {
     if (!sourceId || !chapterId) return
     setLoading(true)
@@ -128,25 +179,49 @@ export function ReaderPage() {
 
     api.getPages(sourceId, chapterId)
       .then(data => {
-        setPages(data)
-        setLoading(false)
-      })
-      .catch(err => {
-        if (mangaId) {
-          api.getDetail(sourceId, mangaId)
-            .then(detail => {
-              setTextContent(detail.description || 'Chapter content in text mode.')
-              setChapterTitle(detail.title)
+        // Check if pages are empty URLs (text content signal from IReader sources)
+        const hasTextContent = data.length > 0 && data.every(p => !p.url)
+        if (hasTextContent) {
+          // Try to get text content
+          api.getText(sourceId, chapterId)
+            .then(textParts => {
+              setTextContent(textParts.join('\n\n'))
+              setPages(data)
               setLoading(false)
             })
-            .catch(err2 => {
-              setError(err.message || err2.message)
+            .catch(() => {
+              setPages(data)
               setLoading(false)
             })
         } else {
-          setError(err.message)
+          setPages(data)
           setLoading(false)
         }
+      })
+      .catch(err => {
+        // Fallback: try text endpoint
+        api.getText(sourceId!, chapterId)
+          .then(textParts => {
+            setTextContent(textParts.join('\n\n'))
+            setLoading(false)
+          })
+          .catch(() => {
+            if (mangaId) {
+              api.getDetail(sourceId!, mangaId)
+                .then(detail => {
+                  setTextContent(detail.description || 'Chapter content in text mode.')
+                  setChapterTitle(detail.title)
+                  setLoading(false)
+                })
+                .catch(err2 => {
+                  setError(err.message || err2.message)
+                  setLoading(false)
+                })
+            } else {
+              setError(err.message)
+              setLoading(false)
+            }
+          })
       })
 
     fetchChaptersList()
@@ -297,10 +372,97 @@ export function ReaderPage() {
     textContainer.scrollTo({ top: scrollRatio * textContainer.scrollHeight, behavior: 'smooth' })
   }, [])
 
+  // --- Replace in chapter ---
+  const handleReplace = useCallback((find: string, replace: string) => {
+    const textContainer = document.querySelector('[data-reader-content]')
+    if (!textContainer) return
+    const text = textContainer.textContent || ''
+    const lower = text.toLowerCase()
+    const q = find.toLowerCase()
+    const idx = lower.indexOf(q)
+    if (idx === -1) return
+    // Perform first match replacement via DOM
+    const walker = document.createTreeWalker(textContainer, NodeFilter.SHOW_TEXT, null)
+    let node: Text | null
+    let offset = 0
+    while ((node = walker.nextNode() as Text | null)) {
+      const nodeText = node.textContent || ''
+      const findIdx = nodeText.toLowerCase().indexOf(q)
+      if (findIdx !== -1 && offset + findIdx >= idx) {
+        const before = nodeText.slice(0, findIdx)
+        const after = nodeText.slice(findIdx + q.length)
+        node.textContent = before + replace + after
+        break
+      }
+      offset += nodeText.length
+    }
+    // Record in history
+    const entry: TextReplacementEntry = {
+      id: crypto.randomUUID(),
+      find,
+      replace,
+      timestamp: Date.now(),
+    }
+    useReaderStore.getState().addTextReplacement(entry)
+  }, [])
+
+  const handleReplaceAll = useCallback((find: string, replace: string) => {
+    const textContainer = document.querySelector('[data-reader-content]')
+    if (!textContainer) return
+    const walker = document.createTreeWalker(textContainer, NodeFilter.SHOW_TEXT, null)
+    let node: Text | null
+    const q = find.toLowerCase()
+    let count = 0
+    while ((node = walker.nextNode() as Text | null)) {
+      const nodeText = node.textContent || ''
+      if (nodeText.toLowerCase().includes(q)) {
+        const regex = new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
+        node.textContent = nodeText.replace(regex, replace)
+        count++
+      }
+    }
+    if (count > 0) {
+      const entry: TextReplacementEntry = {
+        id: crypto.randomUUID(),
+        find,
+        replace,
+        timestamp: Date.now(),
+      }
+      useReaderStore.getState().addTextReplacement(entry)
+    }
+  }, [])
+
   // --- Keyboard shortcuts ---
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return
+
+      // TTS shortcuts (take priority when active)
+      if (ttsState !== 'idle') {
+        switch (e.key) {
+          case ' ':
+            e.preventDefault()
+            if (ttsState === 'speaking') pause()
+            else if (ttsState === 'paused') resume()
+            return
+          case 'ArrowLeft':
+            e.preventDefault()
+            // Seek back ~100 chars
+            const prevIdx = Math.max(0, charIndex - 100)
+            useTtsStore.setState({ charIndex: prevIdx })
+            return
+          case 'ArrowRight':
+            e.preventDefault()
+            const nextIdx = charIndex + 100
+            useTtsStore.setState({ charIndex: nextIdx })
+            return
+          case 'm':
+          case 'M':
+            e.preventDefault()
+            stop()
+            return
+        }
+      }
 
       switch (e.key) {
         case 'ArrowLeft':
@@ -336,7 +498,7 @@ export function ReaderPage() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [currentChapterIndex, chapters.length, mode, currentPage, pages.length, settingsSheetVisible, findVisible, findNext, findPrev, loadChapter, setMode])
+  }, [currentChapterIndex, chapters.length, mode, currentPage, pages.length, settingsSheetVisible, findVisible, findNext, findPrev, loadChapter, setMode, ttsState, charIndex, pause, resume, stop])
 
   // --- Volume key navigation (for devices with volume buttons) ---
   useEffect(() => {
@@ -374,6 +536,22 @@ export function ReaderPage() {
     if (!nextCh) return
     api.getPages(sourceId, nextCh.id).catch(() => {})
   }, [webviewBg, sourceId, currentChapterIndex, chapters])
+
+  // --- Reading break reminder ---
+  useEffect(() => {
+    const { readingBreak } = useReaderStore.getState()
+    if (!readingBreak.enabled) return
+
+    const now = Date.now()
+    if (readingBreak.snoozeUntil && now < readingBreak.snoozeUntil) return
+
+    const lastShown = readingBreak.lastShownAt ?? sessionStartTime
+    const elapsed = now - lastShown
+    if (elapsed >= readingBreak.intervalMinutes * 60 * 1000) {
+      setBreakReminderVisible(true)
+      useReaderStore.getState().setReadingBreakLastShown(now)
+    }
+  }, [chaptersRead, sessionStartTime])
 
   // --- Auto-scroll (text mode) ---
   const [autoScrollActive, setAutoScrollActive] = useState(true)
@@ -596,6 +774,14 @@ export function ReaderPage() {
         visible={findVisible && barsVisible}
       />
 
+      {/* --- Text Replace Bar --- */}
+      <TextReplaceBar
+        onReplace={handleReplace}
+        onReplaceAll={handleReplaceAll}
+        onClose={() => setReplaceVisible(false)}
+        visible={replaceVisible}
+      />
+
       {/* --- Auto-next indicator --- */}
       {loadingNext && (
         <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-surface/80 backdrop-blur-sm rounded-full px-3 py-1.5 border border-border-light shadow animate-in fade-in zoom-in">
@@ -727,6 +913,18 @@ export function ReaderPage() {
         sessionStartTime={sessionStartTime}
         textContent={textContent}
         chaptersRead={chaptersRead}
+      />
+
+      {/* --- Reading Break Reminder --- */}
+      <ReadingBreakReminder
+        visible={breakReminderVisible}
+        intervalMinutes={readingBreak.intervalMinutes}
+        onTakeBreak={() => { setBreakReminderVisible(false); navigate(-1) }}
+        onContinue={() => setBreakReminderVisible(false)}
+        onSnooze={(minutes) => {
+          useReaderStore.getState().setReadingBreakSnoozeUntil(Date.now() + minutes * 60 * 1000)
+          setBreakReminderVisible(false)
+        }}
       />
 
       {/* --- Translation Panel --- */}

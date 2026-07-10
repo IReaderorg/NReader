@@ -1,1 +1,204 @@
 [     101ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:20102
+[ 2015976ms] Error: useTheme must be used within ThemeProvider
+    at useTheme (http://localhost:5173/src/components/ThemeProvider.tsx:60:19)
+    at ThemeToggle (http://localhost:5173/src/components/ThemeToggle.tsx:22:29)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12408:13)
+[ 2015976ms] [WARNING] %s
+
+%s
+ An error occurred in the <ThemeToggle> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:6965
+[ 3264086ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:20102
+[ 3266092ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:20102
+[ 3266184ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ http://localhost:5173/:0
+[ 3273889ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+5:0
+[ 3273897ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+1:0
+[ 3273899ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+2:0
+[ 3273906ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+3:0
+[ 3273911ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+4:0
+[ 3273911ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+6:0
+[ 3274766ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+7:0
+[ 3274768ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+8:0
+[ 3274815ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+9:0
+[ 3274818ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+10:0
+[ 3274820ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+11:0
+[ 3274825ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+12:0
+[ 3275655ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+13:0
+[ 3275657ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+14:0
+[ 3275695ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+15:0
+[ 3275701ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+16:0
+[ 3275706ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+17:0
+[ 3275713ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+18:0
+[ 3276934ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+Manga:0
+[ 3403525ms] [ERROR] Failed to load resource: the server responded with a status of 502 (Bad Gateway) @ http://localhost:5173/api/v1/sources/manganato/popular?page=1:0
+[ 3403597ms] [ERROR] Failed to load resource: the server responded with a status of 502 (Bad Gateway) @ http://localhost:5173/api/v1/sources/manganato/popular?page=1:0
+[ 3407446ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+3:0
+[ 3407461ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+5:0
+[ 3407461ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+4:0
+[ 3407477ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+2:0
+[ 3407477ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+1:0
+[ 3407477ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+6:0
+[ 3408354ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+7:0
+[ 3408402ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+8:0
+[ 3408404ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+9:0
+[ 3408571ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+10:0
+[ 3408575ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+11:0
+[ 3408577ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+12:0
+[ 3409215ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+13:0
+[ 3409320ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+14:0
+[ 3409332ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+15:0
+[ 3409556ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+1:0
+[ 3418632ms] [WARNING] No routes matched location "/reader/jsonplaceholder/jsonplaceholder/post-1/jsonplaceholder%2Fpost-1%2Fcomment-1"  @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=ecbb31bd:653
+[ 3418633ms] [WARNING] No routes matched location "/reader/jsonplaceholder/jsonplaceholder/post-1/jsonplaceholder%2Fpost-1%2Fcomment-1"  @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=ecbb31bd:653
+[ 3421183ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:20102
+[ 3421226ms] [WARNING] No routes matched location "/reader/jsonplaceholder/jsonplaceholder/post-1/jsonplaceholder%2Fpost-1%2Fcomment-1"  @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=ecbb31bd:653
+[ 3421228ms] [WARNING] No routes matched location "/reader/jsonplaceholder/jsonplaceholder/post-1/jsonplaceholder%2Fpost-1%2Fcomment-1"  @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=ecbb31bd:653
+[ 3421534ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:20102
+[ 3421572ms] [WARNING] No routes matched location "/reader/jsonplaceholder/jsonplaceholder/post-1/jsonplaceholder%2Fpost-1%2Fcomment-1"  @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=ecbb31bd:653
+[ 3421573ms] [WARNING] No routes matched location "/reader/jsonplaceholder/jsonplaceholder/post-1/jsonplaceholder%2Fpost-1%2Fcomment-1"  @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=ecbb31bd:653
+[ 3467862ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+1:0
+[ 3484349ms] [ERROR] Failed to load resource: the server responded with a status of 502 (Bad Gateway) @ http://localhost:5173/api/v1/sources/manganato/popular?page=1:0
+[ 3484401ms] [ERROR] Failed to load resource: the server responded with a status of 502 (Bad Gateway) @ http://localhost:5173/api/v1/sources/manganato/popular?page=1:0
+[ 3488139ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+1:0
+[ 3488149ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+2:0
+[ 3488152ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+3:0
+[ 3488161ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+4:0
+[ 3488170ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+5:0
+[ 3488198ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+6:0
+[ 3489097ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+7:0
+[ 3489108ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+8:0
+[ 3489113ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+9:0
+[ 3489121ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+10:0
+[ 3489128ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+11:0
+[ 3489137ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+12:0
+[ 3490080ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+13:0
+[ 3490084ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+14:0
+[ 3490084ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+15:0
+[ 3490085ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+16:0
+[ 3490087ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+17:0
+[ 3490096ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+18:0
+[ 3490966ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+19:0
+[ 3490989ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+20:0
+[ 3492497ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+21:0
+[ 3492513ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+22:0
+[ 3492522ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+23:0
+[ 3492528ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+24:0
+[ 3492541ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+25:0
+[ 3492556ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+26:0
+[ 3493438ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+27:0
+[ 3493445ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+28:0
+[ 3493454ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+29:0
+[ 3493456ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+30:0
+[ 3493461ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+31:0
+[ 3493461ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+32:0
+[ 3494308ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+33:0
+[ 3494317ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+34:0
+[ 3494330ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+35:0
+[ 3494336ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+36:0
+[ 3494348ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+37:0
+[ 3494363ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+38:0
+[ 3495237ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+39:0
+[ 3495283ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+40:0
+[ 3994235ms] Error: useTheme must be used within ThemeProvider
+    at useTheme (http://localhost:5173/src/components/ThemeProvider.tsx?t=1783695196190:60:19)
+    at ThemeToggle (http://localhost:5173/src/components/ThemeToggle.tsx?t=1783695196190:22:29)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12408:13)
+[ 3994235ms] [WARNING] %s
+
+%s
+ An error occurred in the <ThemeToggle> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:6965
+[ 5809351ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:20102
+[ 5809578ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ http://localhost:5173/:0
+[ 5817524ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+3:0
+[ 5817533ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+4:0
+[ 5817541ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+5:0
+[ 5817549ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+6:0
+[ 5817557ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+1:0
+[ 5817561ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+2:0
+[ 5818495ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+7:0
+[ 5818505ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+8:0
+[ 5818512ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+9:0
+[ 5818518ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+10:0
+[ 5818524ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+11:0
+[ 5818532ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+12:0
+[ 5819380ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+13:0
+[ 5819387ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+14:0
+[ 5819413ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+15:0
+[ 5819416ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+16:0
+[ 5819434ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+17:0
+[ 5819442ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+18:0
+[ 5820310ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+19:0
+[ 5820310ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+20:0
+[ 5820311ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+2:0
+[ 6259154ms] Error: useTheme must be used within ThemeProvider
+    at useTheme (http://localhost:5173/src/components/ThemeProvider.tsx?t=1783697832766:60:19)
+    at ThemeToggle (http://localhost:5173/src/components/ThemeToggle.tsx?t=1783697832766:22:29)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:12408:13)
+[ 6259154ms] [WARNING] %s
+
+%s
+ An error occurred in the <ThemeToggle> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:6965
+[ 6299674ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/pages/LibraryPage.tsx?t=1783699480290:0
+[ 6299674ms] [ERROR] [vite] Failed to reload /src/pages/LibraryPage.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[ 6304186ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/pages/LibraryPage.tsx?t=1783699484781:0
+[ 6304188ms] [ERROR] [vite] Failed to reload /src/pages/LibraryPage.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[ 7177360ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:20102
+[ 7177525ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ http://localhost:5173/onboarding:0
+[ 7182863ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ecbb31bd:20102
+[ 7183000ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ http://localhost:5173/:0
+[ 7190427ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+1:0
+[ 7190430ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+2:0
+[ 7190439ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+3:0
+[ 7190455ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+6:0
+[ 7190457ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+4:0
+[ 7190461ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+5:0
+[ 7191344ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+7:0
+[ 7191359ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+8:0
+[ 7191364ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+9:0
+[ 7191371ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+10:0
+[ 7191387ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+11:0
+[ 7191399ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+12:0
+[ 7192258ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+13:0
+[ 7192268ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+14:0
+[ 7192275ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+15:0
+[ 7192286ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500/2d3748/ffffff?text=Post+1:0
+[ 7201871ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+1:0
+[ 7201882ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+2:0
+[ 7201887ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+3:0
+[ 7201892ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+4:0
+[ 7201906ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+5:0
+[ 7201908ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+6:0
+[ 7202954ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+7:0
+[ 7202957ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+8:0
+[ 7202961ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+9:0
+[ 7202989ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+10:0
+[ 7202996ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+11:0
+[ 7202997ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+12:0
+[ 7203866ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+13:0
+[ 7203882ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+14:0
+[ 7203885ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://via.placeholder.com/350x500.png?text=Demo+15:0
+[ 7204207ms] [ERROR] Failed to load resource: the server responded with a status of 502 (Bad Gateway) @ http://localhost:5173/api/v1/sources/manganato/popular?page=1:0
+[ 7204263ms] [ERROR] Failed to load resource: the server responded with a status of 502 (Bad Gateway) @ http://localhost:5173/api/v1/sources/manganato/popular?page=1:0

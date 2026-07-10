@@ -2,6 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { SandboxInstance } from './sandbox/interface.js'
 import { validatePlugin } from './validator.js'
+import { isIReaderSource, createIReaderAdapter, createJsDependencies } from './ireader-bridge.js'
+import type { IReaderPluginAdapter } from './ireader-bridge.js'
 
 interface PluginWatcherOptions {
   pluginsDir: string
@@ -13,6 +15,8 @@ interface PluginWatcherOptions {
 }
 
 export class PluginLoader {
+  /** IReader adapters loaded by this loader instance */
+  private ireaderAdapters = new Map<string, IReaderPluginAdapter>()
   private watcher: fs.FSWatcher | null = null
   private sandbox: SandboxInstance
   private pluginsDir: string
@@ -22,6 +26,8 @@ export class PluginLoader {
   private onLoaded?: (pluginId: string) => void | Promise<void>
   private onError?: (pluginId: string, error: Error) => void
   private onUnloaded?: (pluginId: string) => void | Promise<void>
+  /** Additional hooks for IReader source loading */
+  private onIReaderLoaded?: (pluginId: string, adapter: IReaderPluginAdapter) => void | Promise<void>
 
   constructor(options: PluginWatcherOptions) {
     this.sandbox = options.sandbox
@@ -30,6 +36,13 @@ export class PluginLoader {
     this.onLoaded = options.onLoaded
     this.onError = options.onError
     this.onUnloaded = options.onUnloaded
+  }
+
+  /**
+   * Register a callback for when IReader sources are loaded/wrapped.
+   */
+  setOnIReaderLoaded(handler: (pluginId: string, adapter: IReaderPluginAdapter) => void | Promise<void>): void {
+    this.onIReaderLoaded = handler
   }
 
   async start(): Promise<void> {
@@ -41,7 +54,7 @@ export class PluginLoader {
     await this.scanExisting()
 
     // Watch for changes
-    this.watcher = fs.watch(this.pluginsDir, { recursive: true }, (_eventType, filename) => {
+    this.watcher = fs.watch(this.pluginsDir, { recursive: true }, (_eventType: string | null, filename: string | null) => {
       if (!filename || !filename.endsWith('.js')) return
       this.debounceReload(filename.toString())
     })
@@ -77,7 +90,8 @@ export class PluginLoader {
 
     if (!fs.existsSync(filePath)) {
       this.loadedPlugins.delete(filename)
-      await this.onUnloaded?.(pluginId)
+      this.ireaderAdapters.delete(pluginId!)
+      await this.onUnloaded?.(pluginId!)
       return
     }
 
@@ -93,6 +107,23 @@ export class PluginLoader {
       fn(mockContext.module, mockContext.exports, console)
       const pluginExports = mockContext.module.exports || mockContext.exports
       const plugin = (pluginExports as any).default || pluginExports
+
+      // Detect IReader-format source
+      if (isIReaderSource(plugin as Record<string, unknown>)) {
+        // Wrap IReader source through the bridge adapter
+        const deps = createJsDependencies((plugin as any).baseUrl || `https://${pluginId}.local`)
+        const adapter = createIReaderAdapter(plugin as any, deps)
+        this.ireaderAdapters.set(adapter.info.id, adapter)
+
+        // Load as standard plugin anyway (for sandbox access)
+        await this.sandbox.load(adapter.info.id, code)
+        this.loadedPlugins.set(filename, adapter.info.id)
+        await this.onLoaded?.(adapter.info.id)
+        await this.onIReaderLoaded?.(adapter.info.id, adapter)
+        return
+      }
+
+      // Standard validation for native plugins
       const validation = validatePlugin(plugin)
       if (!validation.valid) {
         throw new Error(`Plugin validation failed: ${validation.errors.join(', ')}`)

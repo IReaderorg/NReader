@@ -16,7 +16,7 @@ import { api } from '../api/client'
 interface ReaderPreset {
   id: string
   name: string
-  description: string
+  description?: string
   fontSize: number
   lineHeight: number
   paragraphSpacing: number
@@ -24,14 +24,6 @@ interface ReaderPreset {
   textAlignment: TextAlignment
   colorFilter: ColorFilterType
 }
-
-const PRESETS: ReaderPreset[] = [
-  { id: 'comfortable', name: 'Comfortable', description: 'Relaxed spacing', fontSize: 18, lineHeight: 1.8, paragraphSpacing: 16, paragraphIndent: 0, textAlignment: 'left', colorFilter: 'none' },
-  { id: 'compact', name: 'Compact', description: 'More text on screen', fontSize: 14, lineHeight: 1.4, paragraphSpacing: 8, paragraphIndent: 0, textAlignment: 'left', colorFilter: 'none' },
-  { id: 'large', name: 'Large Print', description: 'Easy to read', fontSize: 24, lineHeight: 2.0, paragraphSpacing: 20, paragraphIndent: 0, textAlignment: 'left', colorFilter: 'none' },
-  { id: 'book', name: 'Book Style', description: 'Like a paperback', fontSize: 17, lineHeight: 1.7, paragraphSpacing: 12, paragraphIndent: 24, textAlignment: 'justify', colorFilter: 'sepia' },
-  { id: 'dark', name: 'Dark Comfort', description: 'AMOLED friendly', fontSize: 18, lineHeight: 1.7, paragraphSpacing: 14, paragraphIndent: 0, textAlignment: 'left', colorFilter: 'invert' },
-]
 
 // ─── Theme backgrounds (matching IReader preset colors) ──────────────────
 
@@ -226,7 +218,13 @@ function ReaderTab() {
     setFontSize, setLineHeight, setParagraphSpacing, setParagraphIndent, setTextAlignment, setColorFilter,
   } = useReaderStore()
 
-  const presets = PRESETS
+  const [apiPresets, setApiPresets] = useState<Array<ReaderPreset>>([])
+  const [newPresetName, setNewPresetName] = useState('')
+  const [showNewPreset, setShowNewPreset] = useState(false)
+
+  useEffect(() => {
+    api.getPresets().then(data => setApiPresets(data as ReaderPreset[])).catch(() => {})
+  }, [])
 
   const isPresetActive = (p: ReaderPreset) =>
     fontSize === p.fontSize &&
@@ -236,33 +234,87 @@ function ReaderTab() {
     textAlignment === p.textAlignment &&
     colorFilter === p.colorFilter
 
+  const saveCurrentAsPreset = async () => {
+    if (!newPresetName.trim()) return
+    try {
+      const res = await api.createPreset({
+        name: newPresetName.trim(),
+        fontSize, lineHeight, paragraphSpacing, paragraphIndent, textAlignment,
+        colorFilter,
+      })
+      setApiPresets(prev => [...prev, { id: res.id, name: newPresetName.trim(), description: 'Custom', fontSize, lineHeight, paragraphSpacing, paragraphIndent, textAlignment, colorFilter }])
+      setNewPresetName('')
+      setShowNewPreset(false)
+    } catch { /* ignore */ }
+  }
+
+  const deletePreset = async (id: string) => {
+    try {
+      await api.deletePreset(id)
+      setApiPresets(prev => prev.filter(p => p.id !== id))
+    } catch { /* ignore */ }
+  }
+
   return (
     <div className="overflow-y-auto h-full">
       {/* Presets */}
       <SectionHeader title="Reading Presets" />
       <div className="flex gap-2 px-4 py-2 overflow-x-auto no-scrollbar">
-        {presets.map(p => {
+        {apiPresets.map(p => {
           const active = isPresetActive(p)
           return (
-            <button
-              key={p.id}
-              onClick={() => {
-                setFontSize(p.fontSize)
-                setLineHeight(p.lineHeight)
-                setParagraphSpacing(p.paragraphSpacing)
-                setParagraphIndent(p.paragraphIndent)
-                setTextAlignment(p.textAlignment)
-                setColorFilter(p.colorFilter)
-              }}
-              className={`shrink-0 px-3 py-2 rounded-xl text-left transition-colors min-w-[100px] ${
-                active ? 'bg-accent text-black' : 'bg-surface-hover/50 text-text hover:bg-surface-hover'
-              }`}
-            >
-              <div className="text-xs font-semibold">{p.name}</div>
-              <div className="text-[10px] opacity-70">{p.description}</div>
-            </button>
+            <div key={p.id} className="relative group shrink-0">
+              <button
+                onClick={() => {
+                  setFontSize(p.fontSize)
+                  setLineHeight(p.lineHeight)
+                  setParagraphSpacing(p.paragraphSpacing)
+                  setParagraphIndent(p.paragraphIndent)
+                  setTextAlignment(p.textAlignment)
+                  setColorFilter(p.colorFilter)
+                }}
+                className={`px-3 py-2 rounded-xl text-left transition-colors min-w-[100px] ${
+                  active ? 'bg-accent text-black' : 'bg-surface-hover/50 text-text hover:bg-surface-hover'
+                }`}
+              >
+                <div className="text-xs font-semibold">{p.name}</div>
+                <div className="text-[10px] opacity-70">{p.description || 'Preset'}</div>
+              </button>
+              {/* Delete button (only for non-builtin — id without hyphen is builtin) */}
+              {p.id.includes('-') && (
+                <button
+                  onClick={() => deletePreset(p.id)}
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-danger text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                >
+                  ×
+                </button>
+              )}
+            </div>
           )
         })}
+      </div>
+
+      {/* Save current settings as preset */}
+      <div className="px-4 py-1">
+        {!showNewPreset ? (
+          <button onClick={() => setShowNewPreset(true)}
+            className="text-xs text-accent hover:underline">
+            + Save Current as Preset
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              value={newPresetName} onChange={e => setNewPresetName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') saveCurrentAsPreset(); if (e.key === 'Escape') setShowNewPreset(false) }}
+              placeholder="Preset name…"
+              className="flex-1 bg-surface-hover/30 border border-border-light rounded-xl px-2 py-1.5 text-xs text-text placeholder:text-text-muted/40 outline-none focus:border-accent/50"
+            />
+            <button onClick={saveCurrentAsPreset}
+              className="px-3 py-1.5 rounded-xl bg-accent/10 text-accent text-xs font-medium hover:bg-accent/20 transition-colors">
+              Save
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Font */}
@@ -319,7 +371,42 @@ function ReaderTab() {
         ))}
       </div>
 
+      {/* Reading Break Reminder */}
+      <SectionHeader title="Reading Break" />
+      <ReadingBreakSettingsInline />
+
       <div className="h-8" />
+    </div>
+  )
+}
+
+// ─── Reading Break Settings inline ────────────────────────────────────────
+
+function ReadingBreakSettingsInline() {
+  const { readingBreak, setReadingBreakEnabled, setReadingBreakInterval } = useReaderStore()
+
+  return (
+    <div className="px-4 py-2 space-y-3">
+      <ToggleRow
+        label="Break Reminder"
+        subtitle="Remind you to rest your eyes"
+        checked={readingBreak.enabled}
+        onChange={setReadingBreakEnabled}
+      />
+      {readingBreak.enabled && (
+        <div className="flex items-center gap-3 px-1">
+          <span className="text-[11px] text-text-muted shrink-0">Interval</span>
+          <select
+            value={readingBreak.intervalMinutes}
+            onChange={e => setReadingBreakInterval(Number(e.target.value))}
+            className="flex-1 bg-surface-hover/30 border border-border-light rounded-lg px-2 py-1.5 text-xs text-text outline-none"
+          >
+            {[15, 30, 45, 60, 90, 120].map(m => (
+              <option key={m} value={m}>{m} min</option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   )
 }

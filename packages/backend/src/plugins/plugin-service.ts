@@ -1,5 +1,6 @@
 import { PluginLoader } from '@ireader/plugin-system'
 import type { SandboxAdapter, SandboxInstance } from '@ireader/plugin-system'
+import type { IReaderPluginAdapter } from '@ireader/plugin-system'
 
 export interface SourcePluginMeta {
   id: string
@@ -14,6 +15,8 @@ export class PluginService {
   private instance: SandboxInstance | null = null
   private loader: PluginLoader | null = null
   private pluginInfoMap = new Map<string, SourcePluginMeta>()
+  /** IReader source adapters loaded alongside native plugins */
+  private ireaderAdapterMap = new Map<string, IReaderPluginAdapter>()
 
   constructor(
     private pluginsDir: string,
@@ -39,7 +42,14 @@ export class PluginService {
       },
       onUnloaded: (pluginId: string) => {
         this.pluginInfoMap.delete(pluginId)
+        this.ireaderAdapterMap.delete(pluginId)
       },
+    })
+
+    // Handle IReader source loading
+    this.loader.setOnIReaderLoaded((pluginId: string, adapter: IReaderPluginAdapter) => {
+      this.ireaderAdapterMap.set(pluginId, adapter)
+      this.pluginInfoMap.set(pluginId, adapter.info)
     })
 
     await this.loader.start()
@@ -58,7 +68,41 @@ export class PluginService {
     return this.pluginInfoMap.get(id)
   }
 
+  /**
+   * Check if a plugin is an IReader source.
+   */
+  isIReaderPlugin(pluginId: string): boolean {
+    return this.ireaderAdapterMap.has(pluginId)
+  }
+
+  /**
+   * Execute a method on any plugin (native or IReader).
+   * For IReader sources, routes through the adapter.
+   */
   async executePluginMethod<T>(pluginId: string, method: string, args: unknown[]): Promise<T> {
+    // Check if it's an IReader source adapter first
+    const adapter = this.ireaderAdapterMap.get(pluginId)
+    if (adapter) {
+      // Route IReader adapter methods
+      switch (method) {
+        case 'popular':
+          return adapter.popular(args[0] as number) as Promise<T>
+        case 'search':
+          return adapter.search(args[0] as string, args[1] as number) as Promise<T>
+        case 'mangaDetail':
+          return adapter.mangaDetail(args[0] as string) as Promise<T>
+        case 'chapters':
+          return adapter.chapters(args[0] as string) as Promise<T>
+        case 'pages':
+          return adapter.pages(args[0] as string) as Promise<T>
+        case 'getText':
+          return adapter.getText!(args[0] as string) as Promise<T>
+        default:
+          throw new Error(`Unknown IReader adapter method: ${method}`)
+      }
+    }
+
+    // Fall back to sandbox execution for native plugins
     const inst = this.instance
     if (!inst) throw new Error('PluginService has not been started')
     try {

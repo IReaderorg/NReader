@@ -64,6 +64,14 @@ body {
 }
 ::-webkit-scrollbar { width: 0; background: transparent; }
 
+/* ── TTS Highlight ── */
+.tts-highlight {
+  background: hsl(var(--accent) / 0.25) !important;
+  border-radius: 0.25rem;
+  transition: background 0.15s ease;
+  scroll-margin-block: 30vh;
+}
+
 /* ── Layout Helpers ── */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }

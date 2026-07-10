@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Clock, Type, Gauge, CheckCheck } from 'lucide-react'
+import { X, Clock, Type, Gauge, CheckCheck, Target } from 'lucide-react'
 import { useScrollLock } from '../hooks/useScrollLock'
+import { useReaderStore } from '../store/reader-store'
+import { api } from '../api/client'
 
 interface ReadingStatsPanelProps {
   visible: boolean
@@ -65,7 +67,18 @@ export function ReadingStatsPanel({
   const [elapsed, setElapsed] = useState(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  const { readingGoal } = useReaderStore()
+  const [todayTime, setTodayTime] = useState(0)
+
   useScrollLock(visible)
+
+  // Fetch today's stats
+  useEffect(() => {
+    if (!visible) return
+    api.getReadingStats('__today__').then(s => {
+      setTodayTime(Math.floor(s.totalTimeMs / 60000))
+    }).catch(() => {})
+  }, [visible])
 
   // Live timer
   useEffect(() => {
@@ -163,6 +176,46 @@ export function ReadingStatsPanel({
               {wpm >= 250 && wpm < 400 && '🚀 Speed reading — you\'re flying!'}
               {wpm >= 400 && '⚡ Lightning fast — slow down and enjoy!'}
             </p>
+          </div>
+          {/* Daily Goals */}
+          <div className="pt-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5 text-accent" />
+                <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Daily Goals</span>
+              </div>
+              <span className="text-[10px] text-text-muted">
+                {readingGoal.dailyTimeMinutes}min / {readingGoal.dailyChapters}ch
+              </span>
+            </div>
+
+            {/* Time progress */}
+            <div className="mb-2">
+              <div className="flex justify-between text-[10px] text-text-muted mb-1">
+                <span>Reading Time</span>
+                <span>{Math.min(todayTime, readingGoal.dailyTimeMinutes)} / {readingGoal.dailyTimeMinutes} min</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-surface-hover/50 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-accent transition-all duration-500"
+                  style={{ width: `${Math.min(100, (todayTime / Math.max(1, readingGoal.dailyTimeMinutes)) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Chapters progress */}
+            <div>
+              <div className="flex justify-between text-[10px] text-text-muted mb-1">
+                <span>Chapters</span>
+                <span>{Math.min(chaptersRead, readingGoal.dailyChapters)} / {readingGoal.dailyChapters}</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-surface-hover/50 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-accent transition-all duration-500"
+                  style={{ width: `${Math.min(100, (chaptersRead / Math.max(1, readingGoal.dailyChapters)) * 100)}%` }}
+                />
+              </div>
+            </div>
           </div>
         </div>
 

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api, type MangaDetail } from '../api/client'
-import { BookOpen, ArrowUpDown, AlertCircle, Star } from 'lucide-react'
+import { BookOpen, ArrowUpDown, AlertCircle, Star, ArrowRightLeft } from 'lucide-react'
 
 export function MangaDetailPage() {
   const { sourceId, mangaId } = useParams<{ sourceId: string; mangaId: string }>()
@@ -10,6 +10,12 @@ export function MangaDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+
+  // Migration state
+  const [showMigration, setShowMigration] = useState(false)
+  const [migrationQuery, setMigrationQuery] = useState('')
+  const [migrationTargets, setMigrationTargets] = useState<Array<{ sourceId: string; sourceName: string; mangaId: string; title: string; coverUrl: string; matchScore: number }>>([])
+  const [migrationLoading, setMigrationLoading] = useState(false)
 
   useEffect(() => {
     if (!sourceId || !mangaId) return
@@ -20,6 +26,32 @@ export function MangaDetailPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [sourceId, mangaId])
+
+  // Migrate handler
+  const handleMigrate = useCallback(async (targetSourceId: string, targetMangaId: string) => {
+    if (!sourceId || !mangaId) return
+    try {
+      await api.migrateManga({ sourceId, mangaId, targetSourceId, targetMangaId })
+      navigate(`/manga/${targetSourceId}/${encodeURIComponent(targetMangaId)}`)
+    } catch (err) {
+      alert(`Migration failed: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  }, [sourceId, mangaId, navigate])
+
+  // Search migration targets
+  const searchMigrationTargets = useCallback(async () => {
+    if (!manga) return
+    const query = migrationQuery || manga.title
+    setMigrationLoading(true)
+    try {
+      const results = await api.getMigrationTargets(query, sourceId)
+      setMigrationTargets(results)
+    } catch {
+      setMigrationTargets([])
+    } finally {
+      setMigrationLoading(false)
+    }
+  }, [manga, migrationQuery, sourceId])
 
   if (loading) return <DetailSkeleton />
   if (error) return (
@@ -87,6 +119,71 @@ export function MangaDetailPage() {
         <p className="text-xs text-text-secondary leading-relaxed mb-5 line-clamp-3">
           {manga.description}
         </p>
+      )}
+
+      {/* Migrate button */}
+      <button
+        onClick={() => { setShowMigration(!showMigration); if (!showMigration) setMigrationQuery(manga.title) }}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface border border-border-light text-xs text-text-secondary hover:text-text hover:bg-surface-hover transition-colors mb-3"
+      >
+        <ArrowRightLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
+        Migrate to another source
+      </button>
+
+      {/* Migration panel */}
+      {showMigration && (
+        <div className="mb-4 p-3 rounded-xl bg-surface border border-border-light space-y-2">
+          <p className="text-xs font-medium text-text">Source Migration</p>
+          <p className="text-[10px] text-text-muted">
+            Find this manga on another source to migrate your library entry.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={migrationQuery}
+              onChange={e => setMigrationQuery(e.target.value)}
+              placeholder="Search by title…"
+              className="flex-1 bg-surface-hover border border-border-light rounded-lg px-2.5 py-1.5 text-xs text-text placeholder:text-text-muted/50 outline-none focus:border-accent/50 transition-colors"
+              onKeyDown={e => { if (e.key === 'Enter') searchMigrationTargets() }}
+            />
+            <button
+              onClick={searchMigrationTargets}
+              disabled={migrationLoading}
+              className="px-3 py-1.5 rounded-lg bg-accent text-black text-xs font-medium hover:bg-accent/90 disabled:opacity-50 transition-colors shrink-0"
+            >
+              {migrationLoading ? '…' : 'Search'}
+            </button>
+          </div>
+
+          {migrationTargets.length > 0 && (
+            <div className="space-y-1 max-h-60 overflow-y-auto">
+              {migrationTargets.map((target, i) => (
+                <div
+                  key={`${target.sourceId}-${target.mangaId}-${i}`}
+                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-surface-hover cursor-pointer transition-colors"
+                  onClick={() => handleMigrate(target.sourceId, target.mangaId)}
+                >
+                  <div className="w-8 h-11 rounded bg-surface-hover overflow-hidden shrink-0">
+                    {target.coverUrl && (
+                      <img src={target.coverUrl} alt="" className="w-full h-full object-cover" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-text truncate">{target.title}</p>
+                    <p className="text-[10px] text-text-muted">{target.sourceName}</p>
+                  </div>
+                  <span className="text-[10px] text-accent font-medium">
+                    {Math.round(target.matchScore * 100)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!migrationLoading && migrationTargets.length === 0 && migrationQuery && (
+            <p className="text-[10px] text-text-muted text-center py-2">No migration targets found.</p>
+          )}
+        </div>
       )}
 
       {/* Chapters header */}

@@ -79,6 +79,8 @@ export const api = {
   getDetail: (id: string, mangaId: string) => apiFetch<MangaDetail>(`/sources/${id}/detail/${enc(mangaId)}`),
   getChapters: (id: string, mangaId: string) => apiFetch<Chapter[]>(`/sources/${id}/chapters/${enc(mangaId)}`),
   getPages: (id: string, chapterId: string) => apiFetch<Page[]>(`/sources/${id}/pages/${enc(chapterId)}`),
+  /** Get text content for a novel-style chapter (IReader sources) */
+  getText: (id: string, chapterId: string) => apiFetch<string[]>(`/sources/${id}/text/${enc(chapterId)}`),
 
   // Library
   getLibrary: () => apiFetch<LibraryEntry[]>('/library'),
@@ -98,9 +100,32 @@ export const api = {
     apiFetch<Category>('/library/categories', { method: 'POST', body: JSON.stringify({ name, color }) }),
   deleteCategory: (id: string) =>
     apiFetch<{ success: boolean }>(`/library/categories/${id}`, { method: 'DELETE' }),
+  reorderCategories: (categoryIds: string[]) =>
+    apiFetch<{ success: boolean }>('/library/categories/reorder', { method: 'PUT', body: JSON.stringify({ categoryIds }) }),
+
+  // Library enhancements
+  setBookCategories: (id: string, categoryIds: string[]) =>
+    apiFetch<LibraryEntry>(`/library/${id}/categories`, { method: 'PATCH', body: JSON.stringify({ categoryIds }) }),
+  setFavorited: (id: string, favorited: boolean) =>
+    apiFetch<LibraryEntry>(`/library/${id}/favorite`, { method: 'PATCH', body: JSON.stringify({ favorited }) }),
+  updateMetadata: (id: string, data: { title?: string; author?: string; description?: string; coverUrl?: string }) =>
+    apiFetch<LibraryEntry>(`/library/${id}/metadata`, { method: 'PATCH', body: JSON.stringify(data) }),
+  markAllRead: (id: string) =>
+    apiFetch<{ success: boolean }>(`/library/${id}/mark-all-read`, { method: 'POST' }),
+  setArchived: (id: string, archived: boolean) =>
+    apiFetch<LibraryEntry>(`/library/${id}/archive`, { method: 'PATCH', body: JSON.stringify({ archived }) }),
 
   // History
-  getHistory: (mangaId?: string) => apiFetch<HistoryEntry[]>(`/history${mangaId ? `?mangaId=${enc(mangaId)}` : ''}`),
+  getHistory: (mangaId?: string, query?: string) => {
+    let path = '/history'
+    const params = new URLSearchParams()
+    if (mangaId) params.set('mangaId', mangaId)
+    if (query) params.set('q', query)
+    const qs = params.toString()
+    if (qs) path += `?${qs}`
+    return apiFetch<HistoryEntry[]>(path)
+  },
+  getContinueReading: () => apiFetch<HistoryEntry[]>('/history/continue-reading'),
   recordHistory: (entry: {
     mangaId: string; sourceId: string; chapterId: string; chapterNumber: number
     chapterTitle?: string; page: number; scrollPosition: number
@@ -116,18 +141,49 @@ export const api = {
     apiFetch<{ success: boolean }>(`/settings/${key}`, { method: 'DELETE' }),
 
   // Downloads
-  getDownloads: () => apiFetch<DownloadJob[]>('/downloads'),
+  getDownloads: (params?: { status?: string; mangaId?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.status) q.set('status', params.status)
+    if (params?.mangaId) q.set('mangaId', params.mangaId)
+    const qs = q.toString()
+    return apiFetch<DownloadJob[]>(`/downloads${qs ? `?${qs}` : ''}`)
+  },
   getDownload: (id: string) => apiFetch<DownloadJob>(`/downloads/${id}`),
-  createDownload: (entry: { sourceId: string; mangaId: string; chapterId: string; chapterNumber: number }) =>
+  createDownload: (entry: { sourceId: string; mangaId: string; mangaTitle?: string; chapterId: string; chapterNumber: number; chapterTitle?: string; priority?: number }) =>
     apiFetch<DownloadJob>('/downloads', { method: 'POST', body: JSON.stringify(entry) }),
+  batchCreateDownloads: (data: { sourceId: string; mangaId: string; mangaTitle?: string; chapters: Array<{ chapterId: string; chapterNumber: number; chapterTitle?: string; priority?: number }> }) =>
+    apiFetch<DownloadJob[]>('/downloads/batch', { method: 'POST', body: JSON.stringify(data) }),
+  downloadUnreadChapters: (data: { sourceId: string; mangaId: string; mangaTitle?: string; chapters: Array<{ chapterId: string; chapterNumber: number; chapterTitle?: string; read: boolean }> }) =>
+    apiFetch<{ count: number; jobs: DownloadJob[] }>('/downloads/download-unread', { method: 'POST', body: JSON.stringify(data) }),
+  getDownloadQueue: () => apiFetch<DownloadJob[]>('/downloads/queue'),
+  pauseDownload: (id: string) =>
+    apiFetch<{ success: boolean }>(`/downloads/${id}/pause`, { method: 'POST' }),
+  resumeDownload: (id: string) =>
+    apiFetch<{ success: boolean }>(`/downloads/${id}/resume`, { method: 'POST' }),
+  pauseAllDownloads: () =>
+    apiFetch<{ success: boolean; paused: number }>('/downloads/pause-all', { method: 'POST' }),
+  resumeAllDownloads: () =>
+    apiFetch<{ success: boolean; resumed: number }>('/downloads/resume-all', { method: 'POST' }),
   cancelDownload: (id: string) =>
     apiFetch<{ success: boolean }>(`/downloads/${id}/cancel`, { method: 'POST' }),
   retryDownload: (id: string) =>
     apiFetch<DownloadJob>(`/downloads/${id}/retry`, { method: 'POST' }),
+  setDownloadPriority: (id: string, priority: number) =>
+    apiFetch<{ success: boolean }>(`/downloads/${id}/priority`, { method: 'POST', body: JSON.stringify({ priority }) }),
+  reorderQueue: (ids: string[]) =>
+    apiFetch<{ success: boolean }>('/downloads/queue/reorder', { method: 'POST', body: JSON.stringify({ ids }) }),
   clearCompletedDownloads: () =>
     apiFetch<{ success: boolean }>('/downloads/clear-completed', { method: 'POST' }),
   deleteDownload: (id: string) =>
     apiFetch<{ success: boolean }>(`/downloads/${id}`, { method: 'DELETE' }),
+  deleteDownloadByChapter: (chapterId: string) =>
+    apiFetch<{ success: boolean }>('/downloads/delete-chapter', { method: 'POST', body: JSON.stringify({ chapterId }) }),
+  deleteDownloadByManga: (mangaId: string) =>
+    apiFetch<{ success: boolean }>('/downloads/delete-manga', { method: 'POST', body: JSON.stringify({ mangaId }) }),
+  deleteAllCompletedDownloads: () =>
+    apiFetch<{ success: boolean; deleted: number }>('/downloads/delete-all-completed', { method: 'POST' }),
+  getDownloadStorageStats: () =>
+    apiFetch<{ totalBytes: number; totalChapters: number; mangaCount: number }>('/downloads/storage/stats'),
 
   // Plugins
   getPlugins: () => apiFetch<SourceInfo[]>('/plugins'),
@@ -145,23 +201,48 @@ export const api = {
     apiFetch<{ success: boolean }>(`/glossary/${id}`, { method: 'DELETE' }),
 
   // Backup
-  exportBackup: async (includeCovers?: boolean): Promise<Blob> => {
+  exportBackup: async (includeCovers?: boolean, sections?: string[]): Promise<Blob> => {
     const res = await fetch(`${BASE}/backup/export`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ includeCovers: includeCovers ?? false }),
+      body: JSON.stringify({ includeCovers: includeCovers ?? false, sections }),
     })
     if (!res.ok) throw new Error('Export failed')
     return res.blob()
   },
-  importBackup: (zipBase64: string, strategy?: 'merge' | 'replace') =>
+  importBackup: (zipBase64: string, strategy?: 'merge' | 'replace', sections?: string[]) =>
     apiFetch<{ tables: string[]; entries: number }>('/backup/import', {
       method: 'POST',
-      body: JSON.stringify({ zipBase64, strategy: strategy ?? 'merge' }),
+      body: JSON.stringify({ zipBase64, strategy: strategy ?? 'merge', sections }),
     }),
+  listBackups: () =>
+    apiFetch<Array<{ id: string; filename: string; size: number; createdAt: string; modifiedAt: string }>>('/backup'),
+  downloadBackup: async (id: string): Promise<Blob> => {
+    const res = await fetch(`${BASE}/backup/${encodeURIComponent(id)}/download`)
+    if (!res.ok) throw new Error('Download failed')
+    return res.blob()
+  },
+  deleteBackup: (id: string) =>
+    apiFetch<{ success: boolean }>(`/backup/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
   // Plugin marketplace
   getMarketplace: () => apiFetch<Array<{ id: string; name: string; description: string; type: string; version: string; author: string; installUrl: string; downloads: number; rating: number }>>('/plugins/marketplace'),
+
+  // Source installation from repository
+  installSource: (url: string, id?: string) => apiFetch<{ success: boolean; pluginId: string; path: string }>('/sources/install', {
+    method: 'POST',
+    body: JSON.stringify({ url, id }),
+  }),
+  listRepository: (url: string) => apiFetch<Array<{ id: string; name: string; lang: string; baseUrl: string; version: string }>>(`/sources/repository?url=${encodeURIComponent(url)}`),
+
+  // Source migration
+  getMigrationTargets: (query: string, excludeSourceId?: string) =>
+    apiFetch<Array<{ sourceId: string; sourceName: string; mangaId: string; title: string; coverUrl: string; matchScore: number }>>(`/sources/migration/targets?q=${encodeURIComponent(query)}${excludeSourceId ? `&exclude=${encodeURIComponent(excludeSourceId)}` : ''}`),
+  migrateManga: (data: { sourceId: string; mangaId: string; targetSourceId: string; targetMangaId: string }) =>
+    apiFetch<{ success: boolean; sourceId: string; mangaId: string; targetSourceId: string; targetMangaId: string; totalChapters: number; matchedChapters: number; chapterMap: Record<string, string> }>('/sources/migration/migrate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
   // Reader themes
   getThemes: () => apiFetch<Array<{ id: string; name: string; isBuiltin: boolean; colors: { background: string; text: string; link: string; highlight: string; header: string; separator: string; card: string } }>>('/reader/themes'),
@@ -188,6 +269,31 @@ export const api = {
   recordReadingStats: (data: { mangaId: string; sourceId: string; totalTimeMs?: number; chaptersRead?: number }) =>
     apiFetch<{ mangaId: string; sourceId: string; totalTimeMs: number; chaptersRead: number; lastReadAt: string }>('/reading-stats', { method: 'POST', body: JSON.stringify(data) }),
 
+  // Stats time-series
+  getDailyStats: (from?: string, to?: string) => {
+    const params = new URLSearchParams()
+    if (from) params.set('from', from)
+    if (to) params.set('to', to)
+    const qs = params.toString()
+    return apiFetch<{ type: string; data: Array<{ date: string; totalTimeMs: number; chaptersRead: number; count: number }> }>(`/reading-stats/daily${qs ? `?${qs}` : ''}`)
+  },
+  getWeeklyStats: (from?: string, to?: string) => {
+    const params = new URLSearchParams()
+    if (from) params.set('from', from)
+    if (to) params.set('to', to)
+    const qs = params.toString()
+    return apiFetch<{ type: string; data: Array<{ date: string; totalTimeMs: number; chaptersRead: number; count: number }> }>(`/reading-stats/weekly${qs ? `?${qs}` : ''}`)
+  },
+  getMonthlyStats: (from?: string, to?: string) => {
+    const params = new URLSearchParams()
+    if (from) params.set('from', from)
+    if (to) params.set('to', to)
+    const qs = params.toString()
+    return apiFetch<{ type: string; data: Array<{ date: string; totalTimeMs: number; chaptersRead: number; count: number }> }>(`/reading-stats/monthly${qs ? `?${qs}` : ''}`)
+  },
+  getInsights: () => apiFetch<{ totalBooksRead: number; totalChapters: number; totalTimeMs: number; completedThisMonth: number; streakLength: number }>('/reading-stats/insights'),
+  getRecommendations: () => apiFetch<Array<{ mangaId: string; sourceId: string; chaptersRead: number; totalTimeMs: number }>>('/reading-stats/recommendations'),
+
   // Streaks
   getStreaks: (days?: number) => apiFetch<Array<{ date: string; read: boolean }>>(`/streaks${days ? `?days=${days}` : ''}`),
   recordStreak: () => apiFetch<{ date: string; recorded: boolean }>('/streaks', { method: 'POST', body: JSON.stringify({}) }),
@@ -211,4 +317,13 @@ export const api = {
   },
   deleteFont: (id: string) =>
     apiFetch<{ success: boolean }>(`/fonts/${id}`, { method: 'DELETE' }),
+
+  // Reading Presets
+  getPresets: () => apiFetch<Array<{ id: string; name: string; fontSize: number; lineHeight: number; paragraphSpacing: number; paragraphIndent: number; textAlignment: string; colorFilter: string }>>('/reader/presets'),
+  createPreset: (data: { name: string; fontSize: number; lineHeight: number; paragraphSpacing: number; paragraphIndent: number; textAlignment: string; colorFilter: string }) =>
+    apiFetch<{ id: string }>('/reader/presets', { method: 'POST', body: JSON.stringify(data) }),
+  updatePreset: (id: string, data: Record<string, unknown>) =>
+    apiFetch<{ success: boolean }>(`/reader/presets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deletePreset: (id: string) =>
+    apiFetch<{ success: boolean }>(`/reader/presets/${id}`, { method: 'DELETE' }),
 }

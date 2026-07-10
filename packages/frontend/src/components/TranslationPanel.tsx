@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Languages, BookOpen, Plus, Trash2 } from 'lucide-react'
-import { useTranslationStore } from '../store/translation-store'
+import { useTranslationStore, type EngineType } from '../store/translation-store'
 import { useScrollLock } from '../hooks/useScrollLock'
 
 interface TranslationPanelProps {
@@ -24,16 +24,28 @@ const LANGUAGES = [
   { code: 'th', name: 'Thai' },
 ]
 
+const ENGINES: { type: EngineType; label: string }[] = [
+  { type: 'mock', label: 'Mock' },
+  { type: 'deepl', label: 'DeepL' },
+  { type: 'ai', label: 'LLM' },
+  { type: 'openai', label: 'OpenAI' },
+  { type: 'deepseek', label: 'DeepSeek' },
+  { type: 'libre', label: 'LibreTranslate' },
+  { type: 'ollama', label: 'Ollama' },
+  { type: 'openrouter', label: 'OpenRouter' },
+]
+
 export function TranslationPanel({ visible, onClose, textContent }: TranslationPanelProps) {
   const {
-    enabled, sourceLang, targetLang, engine,
+    enabled, sourceLang, targetLang, engine, autoTranslate,
     glossary,
-    setEnabled, setSourceLang, setTargetLang, setEngine,
+    setEnabled, setSourceLang, setTargetLang, setEngine, setAutoTranslate,
     loadGlossary, addGlossaryEntry, removeGlossaryEntry,
   } = useTranslationStore()
 
   const [translatedText, setTranslatedText] = useState('')
   const [translating, setTranslating] = useState(false)
+  const [progress, setProgress] = useState({ total: 0, completed: 0, failed: 0 })
   const [glossarySource, setGlossarySource] = useState('')
   const [glossaryTarget, setGlossaryTarget] = useState('')
   const [glossaryOpen, setGlossaryOpen] = useState(false)
@@ -52,13 +64,15 @@ export function TranslationPanel({ visible, onClose, textContent }: TranslationP
   useEffect(() => {
     if (!enabled || !textContent || !visible) {
       setTranslatedText('')
+      setProgress({ total: 0, completed: 0, failed: 0 })
       return
     }
     setTranslating(true)
-    // Mock translation: in production, call translation API
+    // Mock translation: in production, create engine and queue
     const timer = setTimeout(() => {
       setTranslatedText(`[${targetLang.toUpperCase()}] ${textContent.slice(0, 500)}…`)
       setTranslating(false)
+      setProgress({ total: 1, completed: 1, failed: 0 })
     }, 800)
     return () => clearTimeout(timer)
   }, [enabled, sourceLang, targetLang, engine, textContent, visible])
@@ -75,6 +89,8 @@ export function TranslationPanel({ visible, onClose, textContent }: TranslationP
     setGlossarySource('')
     setGlossaryTarget('')
   }
+
+  const progressPercent = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0
 
   return (
     <div className="fixed inset-0 z-[65]">
@@ -131,15 +147,38 @@ export function TranslationPanel({ visible, onClose, textContent }: TranslationP
           {/* Engine selector */}
           <div>
             <p className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Engine</p>
-            <div className="flex gap-1">
-              {(['mock', 'deepl'] as const).map(e => (
-                <button key={e} onClick={() => setEngine(e)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${engine === e ? 'bg-accent text-black' : 'bg-surface-hover/30 text-text-muted hover:bg-surface-hover/50'}`}>
-                  {e === 'mock' ? 'Mock' : 'DeepL'}
+            <div className="flex flex-wrap gap-1">
+              {ENGINES.map(e => (
+                <button key={e.type} onClick={() => setEngine(e.type)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${engine === e.type ? 'bg-accent text-black' : 'bg-surface-hover/30 text-text-muted hover:bg-surface-hover/50'}`}>
+                  {e.label}
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Auto-translate toggle */}
+          <label className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-surface-hover/30 cursor-pointer">
+            <div>
+              <p className="text-sm font-medium text-text">Auto-translate on scroll</p>
+              <p className="text-xs text-text-muted">Translate visible paragraphs as you read</p>
+            </div>
+            <input type="checkbox" checked={autoTranslate} onChange={e => setAutoTranslate(e.target.checked)}
+              className="w-4 h-4 rounded accent-[hsl(var(--accent))]" />
+          </label>
+
+          {/* Progress bar */}
+          {translating && progress.total > 0 && (
+            <div>
+              <div className="flex items-center justify-between text-xs text-text-muted mb-1">
+                <span>Translating…</span>
+                <span>{progress.completed}/{progress.total}</span>
+              </div>
+              <div className="h-1.5 bg-surface-hover/50 rounded-full overflow-hidden">
+                <div className="h-full bg-accent rounded-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+              </div>
+            </div>
+          )}
 
           {/* Translated text preview */}
           {enabled && (

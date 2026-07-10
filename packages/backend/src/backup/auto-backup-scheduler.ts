@@ -4,10 +4,10 @@ import { join } from 'node:path'
 
 export interface AutoBackupConfig {
   enabled: boolean
-  intervalHours: number // e.g. 24 = daily
-  maxBackups: number // keep last N backups
+  intervalHours: number
+  maxBackups: number
   includeCovers: boolean
-  backupDir: string // directory to store backups
+  backupDir: string
 }
 
 const DEFAULT_CONFIG: AutoBackupConfig = {
@@ -18,14 +18,16 @@ const DEFAULT_CONFIG: AutoBackupConfig = {
   backupDir: join(process.cwd(), 'backups'),
 }
 
+const CONFIG_KEY = 'autoBackup'
+
 export class AutoBackupScheduler {
   private config: AutoBackupConfig
   private timer: ReturnType<typeof setInterval> | null = null
   private backupService: BackupService
 
-  constructor(backupService: BackupService, config?: Partial<AutoBackupConfig>) {
+  constructor(backupService: BackupService) {
     this.backupService = backupService
-    this.config = { ...DEFAULT_CONFIG, ...config }
+    this.config = { ...DEFAULT_CONFIG }
   }
 
   getConfig(): AutoBackupConfig {
@@ -36,18 +38,15 @@ export class AutoBackupScheduler {
     const wasEnabled = this.config.enabled
     this.config = { ...this.config, ...updates }
 
-    // Ensure backup directory exists
     if (!existsSync(this.config.backupDir)) {
       mkdirSync(this.config.backupDir, { recursive: true })
     }
 
-    // Handle enable/disable transitions
     if (!wasEnabled && this.config.enabled) {
       this.start()
     } else if (wasEnabled && !this.config.enabled) {
       this.stop()
     } else if (this.config.enabled && this.timer) {
-      // Interval changed — restart with new interval
       this.stop()
       this.start()
     }
@@ -56,21 +55,18 @@ export class AutoBackupScheduler {
   }
 
   start(): void {
-    if (this.timer) return // already running
+    if (this.timer) return
 
     console.log(`[AutoBackup] Starting — interval: ${this.config.intervalHours}h, max: ${this.config.maxBackups}`)
 
-    // Ensure backup directory exists
     if (!existsSync(this.config.backupDir)) {
       mkdirSync(this.config.backupDir, { recursive: true })
     }
 
-    // Run first backup immediately if no backups exist
     this.checkAndBackup().catch(err => {
       console.error('[AutoBackup] Initial backup failed:', err)
     })
 
-    // Schedule periodic backups
     const intervalMs = this.config.intervalHours * 60 * 60 * 1000
     this.timer = setInterval(() => {
       this.checkAndBackup().catch(err => {
@@ -97,22 +93,16 @@ export class AutoBackupScheduler {
 
   private async checkAndBackup(): Promise<void> {
     const { backupDir, maxBackups } = this.config
-
-    // Check if we need to back up (has enough time passed?)
     const existing = this.listExistingBackups()
     if (existing.length > 0) {
       const newest = existing[0]!
       const ageMs = Date.now() - newest.timestamp
-      const thresholdMs = this.config.intervalHours * 60 * 60 * 1000 * 0.9 // 90% threshold
+      const thresholdMs = this.config.intervalHours * 60 * 60 * 1000 * 0.9
       if (ageMs < thresholdMs) {
-        return // Not ready yet
+        return
       }
     }
-
-    // Perform backup
     await this.performBackup()
-
-    // Cleanup old backups
     await this.cleanupOld(backupDir, maxBackups)
   }
 
@@ -143,7 +133,6 @@ export class AutoBackupScheduler {
       const files = readdirSync(backupDir)
         .filter((f: string) => f.startsWith('ireader-backup-') && f.endsWith('.zip'))
         .map((f: string) => {
-          // Extract timestamp from filename: ireader-backup-YYYY-MM-DDTHH-MM-SS-SSSZ.zip
           const isoString = f
             .replace('ireader-backup-', '')
             .replace('.zip', '')

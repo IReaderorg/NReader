@@ -1,20 +1,39 @@
 import { useEffect, useState } from 'react'
-import { useTranslationStore } from '../store/translation-store'
-import { ArrowLeft, Plus, Trash2, Languages, BookOpen } from 'lucide-react'
+import { useTranslationStore, type EngineType } from '../store/translation-store'
+import { ArrowLeft, Plus, Trash2, Languages, BookOpen, Settings2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+
+interface EngineConfigForm {
+  engine: EngineType
+  label: string
+  fields: Array<{ key: 'apiKey' | 'baseUrl' | 'model'; label: string; placeholder: string; secret?: boolean }>
+}
+
+const ENGINE_FORMS: EngineConfigForm[] = [
+  { engine: 'mock', label: 'Mock', fields: [] },
+  { engine: 'deepl', label: 'DeepL', fields: [{ key: 'apiKey', label: 'API Key', placeholder: 'Your DeepL API key', secret: true }] },
+  { engine: 'ai', label: 'LLM (OpenAI/Anthropic)', fields: [{ key: 'apiKey', label: 'API Key', placeholder: 'sk-...', secret: true }, { key: 'model', label: 'Model', placeholder: 'gpt-4o-mini' }] },
+  { engine: 'openai', label: 'OpenAI', fields: [{ key: 'apiKey', label: 'API Key', placeholder: 'sk-...', secret: true }, { key: 'model', label: 'Model', placeholder: 'gpt-4o-mini' }, { key: 'baseUrl', label: 'Base URL', placeholder: 'https://api.openai.com/v1' }] },
+  { engine: 'deepseek', label: 'DeepSeek', fields: [{ key: 'apiKey', label: 'API Key', placeholder: 'sk-...', secret: true }, { key: 'model', label: 'Model', placeholder: 'deepseek-chat' }] },
+  { engine: 'libre', label: 'LibreTranslate', fields: [{ key: 'baseUrl', label: 'Server URL', placeholder: 'https://translate.example.com' }, { key: 'apiKey', label: 'API Key (optional)', placeholder: '...', secret: true }] },
+  { engine: 'ollama', label: 'Ollama', fields: [{ key: 'baseUrl', label: 'Server URL', placeholder: 'http://localhost:11434' }, { key: 'model', label: 'Model', placeholder: 'llama3' }] },
+  { engine: 'openrouter', label: 'OpenRouter', fields: [{ key: 'apiKey', label: 'API Key', placeholder: 'sk-or-...', secret: true }, { key: 'model', label: 'Model', placeholder: 'openai/gpt-4o-mini' }] },
+]
 
 export function TranslationSettingsPage() {
   const navigate = useNavigate()
   const {
     enabled, setEnabled, targetLang, setTargetLang,
     sourceLang, setSourceLang, engine, setEngine,
-    glossary, loadGlossary, addGlossaryEntry, removeGlossaryEntry
+    glossary, loadGlossary, addGlossaryEntry, removeGlossaryEntry,
+    engineConfigs, setEngineConfig,
   } = useTranslationStore()
 
   const [showAdd, setShowAdd] = useState(false)
   const [newSource, setNewSource] = useState('')
   const [newTarget, setNewTarget] = useState('')
   const [newContext, setNewContext] = useState('')
+  const [expandedEngine, setExpandedEngine] = useState<string | null>(null)
 
   useEffect(() => {
     loadGlossary()
@@ -70,21 +89,21 @@ export function TranslationSettingsPage() {
           </button>
         </div>
 
-        {/* Engine */}
+        {/* Engine selector */}
         <div>
           <h2 className="text-xs font-semibold text-text mb-2">Engine</h2>
-          <div className="flex gap-2">
-            {(['mock', 'deepl'] as const).map(e => (
+          <div className="flex flex-wrap gap-2">
+            {(['mock', 'deepl', 'ai', 'openai', 'deepseek', 'libre', 'ollama', 'openrouter'] as const).map(e => (
               <button
                 key={e}
                 onClick={() => setEngine(e)}
-                className={`flex-1 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border ${
+                className={`px-3 py-2 rounded-xl text-xs font-medium transition-all border ${
                   engine === e
                     ? 'bg-accent text-black border-accent'
                     : 'bg-surface text-text-secondary border-border-light hover:border-accent/30'
                 }`}
               >
-                {e === 'mock' ? 'Mock' : 'DeepL'}
+                {e === 'ai' ? 'LLM' : e.charAt(0).toUpperCase() + e.slice(1)}
               </button>
             ))}
           </div>
@@ -109,6 +128,47 @@ export function TranslationSettingsPage() {
               placeholder="e.g. en"
               className="w-full rounded-xl bg-surface border border-border-light px-3 py-2.5 text-sm text-text placeholder:text-text-muted"
             />
+          </div>
+        </div>
+
+        {/* Per-engine settings */}
+        <div>
+          <h2 className="text-xs font-semibold text-text mb-3 flex items-center gap-2">
+            <Settings2 className="w-3.5 h-3.5 text-accent" strokeWidth={1.5} />
+            Engine Settings
+          </h2>
+          <div className="space-y-2">
+            {ENGINE_FORMS.filter(f => f.fields.length > 0).map(form => {
+              const isExpanded = expandedEngine === form.engine
+              const config = engineConfigs[form.engine] ?? {}
+              return (
+                <div key={form.engine} className="rounded-xl bg-surface border border-border-light overflow-hidden">
+                  <button
+                    onClick={() => setExpandedEngine(isExpanded ? null : form.engine)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-text hover:bg-surface-hover/30 transition-colors"
+                  >
+                    <span>{form.label}</span>
+                    <span className="text-xs text-text-muted">{isExpanded ? 'Hide' : 'Configure'}</span>
+                  </button>
+                  {isExpanded && (
+                    <div className="px-3 pb-3 space-y-2 animate-in fade-in slide-in-from-top-1">
+                      {form.fields.map(field => (
+                        <div key={field.key}>
+                          <p className="text-[11px] text-text-secondary mb-1">{field.label}</p>
+                          <input
+                            type={field.secret ? 'password' : 'text'}
+                            value={config[field.key] ?? ''}
+                            onChange={e => setEngineConfig(form.engine, { ...config, [field.key]: e.target.value })}
+                            placeholder={field.placeholder}
+                            className="w-full rounded-lg bg-white/5 border border-border-light px-3 py-2 text-xs text-text placeholder:text-text-muted outline-none focus:border-accent/50"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
 

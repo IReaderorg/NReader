@@ -75,6 +75,8 @@ export interface LibraryEntry {
   chaptersRead: number
   totalChapters?: number
   score?: number
+  favorited?: boolean
+  archived?: boolean
   dateAdded: string
   dateUpdated?: string
   categoryIds: string[]
@@ -107,16 +109,23 @@ export interface Setting {
 }
 
 // Download
+export type DownloadStatus = 'queued' | 'downloading' | 'paused' | 'completed' | 'failed' | 'cancelled'
+
 export interface DownloadJob {
   id: string
   sourceId: string
   mangaId: string
+  mangaTitle?: string
   chapterId: string
   chapterNumber: number
-  status: 'queued' | 'downloading' | 'completed' | 'failed' | 'cancelled'
+  chapterTitle?: string
+  status: DownloadStatus
   progress: number
   bytesDownloaded: number
   totalBytes?: number
+  priority: number
+  retryCount: number
+  maxRetries: number
   error?: string
   createdAt: string
   completedAt?: string

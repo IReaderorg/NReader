@@ -31,6 +31,51 @@ export interface FontEntry {
   uploadedAt: string
 }
 
+// ─── Content filter: per-pattern enable/disable ───────────────────────────
+
+export interface ContentFilterEntry {
+  pattern: string
+  enabled: boolean
+}
+
+// ─── Named preset ─────────────────────────────────────────────────────────
+
+export interface NamedPreset {
+  id: string
+  name: string
+  fontSize: number
+  lineHeight: number
+  paragraphSpacing: number
+  paragraphIndent: number
+  textAlignment: TextAlignment
+  colorFilter: ColorFilterType
+}
+
+// ─── Text replacement history entry ───────────────────────────────────────
+
+export interface TextReplacementEntry {
+  id: string
+  find: string
+  replace: string
+  timestamp: number
+}
+
+// ─── Reading break ────────────────────────────────────────────────────────
+
+interface ReadingBreakState {
+  enabled: boolean
+  intervalMinutes: number
+  lastShownAt: number | null
+  snoozeUntil: number | null
+}
+
+// ─── Reading goals ────────────────────────────────────────────────────────
+
+export interface ReadingGoal {
+  dailyTimeMinutes: number
+  dailyChapters: number
+}
+
 interface ReaderStore {
   /** Current reading session */
   currentSourceId: string | null
@@ -53,6 +98,10 @@ interface ReaderStore {
   /** Content filter (persisted) */
   contentFilterEnabled: boolean
   contentFilterPatterns: string
+  /** Per-pattern enable/disable (persisted) */
+  contentFilterEntries: ContentFilterEntry[]
+  /** Saved custom pattern sets */
+  savedPatternSets: string[] // JSON arrays of pattern strings
   /** Color filter (persisted) */
   colorFilter: ColorFilterType
   /** General display toggles (persisted) */
@@ -74,6 +123,28 @@ interface ReaderStore {
   currentPage: number
   totalPages: number
   progress: number
+
+  // ─── Reading break ───────────────────────────────────────────────────
+  readingBreak: ReadingBreakState
+  setReadingBreakEnabled: (v: boolean) => void
+  setReadingBreakInterval: (v: number) => void
+  setReadingBreakLastShown: (v: number | null) => void
+  setReadingBreakSnoozeUntil: (v: number | null) => void
+
+  // ─── Reading goals ───────────────────────────────────────────────────
+  readingGoal: ReadingGoal
+  setReadingGoal: (g: ReadingGoal) => void
+
+  // ─── Text replacement ────────────────────────────────────────────────
+  textReplacements: TextReplacementEntry[]
+  addTextReplacement: (entry: TextReplacementEntry) => void
+  removeTextReplacement: (id: string) => void
+  clearTextReplacements: () => void
+
+  // ─── Named presets ───────────────────────────────────────────────────
+  namedPresets: NamedPreset[]
+  setNamedPresets: (presets: NamedPreset[]) => void
+
   /** Actions */
   openChapter: (sourceId: string, mangaId: string, chapterId: string, chapterNumber: number) => void
   setMode: (mode: ReaderMode) => void
@@ -96,6 +167,8 @@ interface ReaderStore {
   /** Content filter */
   setContentFilterEnabled: (enabled: boolean) => void
   setContentFilterPatterns: (patterns: string) => void
+  setContentFilterEntries: (entries: ContentFilterEntry[]) => void
+  setSavedPatternSets: (sets: string[]) => void
   /** Color filter */
   setColorFilter: (filter: ColorFilterType) => void
   /** General display toggles */
@@ -141,6 +214,8 @@ export const useReaderStore = create<ReaderStore>()(
       autoScrollSpeed: 5,
       contentFilterEnabled: false,
       contentFilterPatterns: DEFAULT_CONTENT_FILTER_PATTERNS,
+      contentFilterEntries: [],
+      savedPatternSets: [],
       colorFilter: 'none',
       immersiveMode: false,
       showScrollbar: true,
@@ -157,6 +232,27 @@ export const useReaderStore = create<ReaderStore>()(
       currentPage: 0,
       totalPages: 0,
       progress: 0,
+
+      // Reading break defaults
+      readingBreak: { enabled: false, intervalMinutes: 30, lastShownAt: null, snoozeUntil: null },
+      setReadingBreakEnabled: (v) => set((s) => ({ readingBreak: { ...s.readingBreak, enabled: v } })),
+      setReadingBreakInterval: (v) => set((s) => ({ readingBreak: { ...s.readingBreak, intervalMinutes: v } })),
+      setReadingBreakLastShown: (v) => set((s) => ({ readingBreak: { ...s.readingBreak, lastShownAt: v } })),
+      setReadingBreakSnoozeUntil: (v) => set((s) => ({ readingBreak: { ...s.readingBreak, snoozeUntil: v } })),
+
+      // Reading goals defaults
+      readingGoal: { dailyTimeMinutes: 30, dailyChapters: 3 },
+      setReadingGoal: (g) => set({ readingGoal: g }),
+
+      // Text replacement defaults
+      textReplacements: [],
+      addTextReplacement: (entry) => set((s) => ({ textReplacements: [...s.textReplacements, entry] })),
+      removeTextReplacement: (id) => set((s) => ({ textReplacements: s.textReplacements.filter(e => e.id !== id) })),
+      clearTextReplacements: () => set({ textReplacements: [] }),
+
+      // Named presets
+      namedPresets: [],
+      setNamedPresets: (presets) => set({ namedPresets: presets }),
 
       openChapter: (sourceId, mangaId, chapterId, chapterNumber) => set({
         currentSourceId: sourceId,
@@ -192,6 +288,8 @@ export const useReaderStore = create<ReaderStore>()(
       setAutoScrollSpeed: (speed) => set({ autoScrollSpeed: speed }),
       setContentFilterEnabled: (enabled) => set({ contentFilterEnabled: enabled }),
       setContentFilterPatterns: (patterns) => set({ contentFilterPatterns: patterns }),
+      setContentFilterEntries: (entries) => set({ contentFilterEntries: entries }),
+      setSavedPatternSets: (sets) => set({ savedPatternSets: sets }),
       setColorFilter: (filter) => set({ colorFilter: filter }),
       setImmersiveMode: (v) => set({ immersiveMode: v }),
       setShowScrollbar: (v) => set({ showScrollbar: v }),
@@ -220,6 +318,8 @@ export const useReaderStore = create<ReaderStore>()(
         autoScrollSpeed: state.autoScrollSpeed,
         contentFilterEnabled: state.contentFilterEnabled,
         contentFilterPatterns: state.contentFilterPatterns,
+        contentFilterEntries: state.contentFilterEntries,
+        savedPatternSets: state.savedPatternSets,
         colorFilter: state.colorFilter,
         immersiveMode: state.immersiveMode,
         showScrollbar: state.showScrollbar,
@@ -231,6 +331,10 @@ export const useReaderStore = create<ReaderStore>()(
         selectableMode: state.selectableMode,
         reducedAnimations: state.reducedAnimations,
         pagerDirection: state.pagerDirection,
+        readingBreak: state.readingBreak,
+        readingGoal: state.readingGoal,
+        textReplacements: state.textReplacements,
+        namedPresets: state.namedPresets,
       }),
     }
   )

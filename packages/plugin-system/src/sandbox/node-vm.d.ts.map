@@ -1,0 +1,1 @@
+{"version":3,"file":"node-vm.d.ts","sourceRoot":"","sources":["node-vm.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,cAAc,EAAE,eAAe,EAAE,cAAc,EAAE,MAAM,gBAAgB,CAAA;AASrF,qBAAa,aAAc,YAAW,cAAc;IAClD,IAAI,EAAG,SAAS,CAAS;IACzB,OAAO,CAAC,QAAQ,CAA+B;IAE/C,WAAW,IAAI,OAAO;IAIhB,MAAM,CAAC,OAAO,EAAE,cAAc,GAAG,OAAO,CAAC,eAAe,CAAC;CAGhE"}

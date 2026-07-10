@@ -1,4 +1,4 @@
-import type { LibraryEntry, Category, HistoryEntry, Setting, DownloadJob, PluginMeta, GlossaryEntry } from '../entities/index.js'
+import type { LibraryEntry, Category, HistoryEntry, Setting, DownloadJob, DownloadStatus, PluginMeta, GlossaryEntry } from '../entities/index.js'
 
 export interface LibraryRepository {
   getAll(): Promise<LibraryEntry[]>
@@ -35,6 +35,14 @@ export interface DownloadRepository {
   update(job: Partial<DownloadJob> & { id: string }): Promise<void>
   remove(id: string): Promise<void>
   getActive(): Promise<DownloadJob[]>
+  getByManga(mangaId: string): Promise<DownloadJob[]>
+  getByStatus(status: DownloadStatus): Promise<DownloadJob[]>
+  getQueue(): Promise<DownloadJob[]>
+  updateQueueOrder(ids: string[]): Promise<void>
+  removeByManga(mangaId: string): Promise<void>
+  removeByChapter(chapterId: string): Promise<void>
+  getStorageStats(): Promise<{ totalBytes: number; totalChapters: number; mangaCount: number }>
+  getRetryCount(id: string): Promise<number>
 }
 
 export interface PluginRepository {

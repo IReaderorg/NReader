@@ -114,6 +114,68 @@ export function createLibraryRouter(repo: LibraryRepository): Hono {
     return c.json(updated)
   })
 
+  // ========== New library enhancement endpoints ==========
+
+  // Multi-category per book
+  app.patch('/:id/categories', async (c) => {
+    const { id } = c.req.param()
+    const existing = await repo.getById(id)
+    if (!existing) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    const body = await c.req.json<{ categoryIds: string[] }>()
+    await repo.update({ id, categoryIds: body.categoryIds, dateUpdated: new Date().toISOString() })
+    return c.json(await repo.getById(id))
+  })
+
+  // Favorite/Pin toggle
+  app.patch('/:id/favorite', async (c) => {
+    const { id } = c.req.param()
+    const existing = await repo.getById(id)
+    if (!existing) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    const body = await c.req.json<{ favorited: boolean }>()
+    await repo.update({ id, favorited: body.favorited, dateUpdated: new Date().toISOString() })
+    return c.json(await repo.getById(id))
+  })
+
+  // Metadata editing
+  app.patch('/:id/metadata', async (c) => {
+    const { id } = c.req.param()
+    const existing = await repo.getById(id)
+    if (!existing) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    const body = await c.req.json<{ title?: string; author?: string; description?: string; coverUrl?: string }>()
+    await repo.update({ id, ...body, dateUpdated: new Date().toISOString() })
+    return c.json(await repo.getById(id))
+  })
+
+  // Mark all read
+  app.post('/:id/mark-all-read', async (c) => {
+    const { id } = c.req.param()
+    const existing = await repo.getById(id)
+    if (!existing) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    const total = existing.totalChapters ?? 0
+    await repo.update({ id, chaptersRead: total, dateUpdated: new Date().toISOString() })
+    return c.json({ success: true })
+  })
+
+  // Archive toggle
+  app.patch('/:id/archive', async (c) => {
+    const { id } = c.req.param()
+    const existing = await repo.getById(id)
+    if (!existing) return c.json({ error: 'Not found', code: 'NOT_FOUND', status: 404 }, 404)
+    const body = await c.req.json<{ archived: boolean }>()
+    await repo.update({ id, archived: body.archived, dateUpdated: new Date().toISOString() })
+    return c.json(await repo.getById(id))
+  })
+
+  // Category reorder
+  app.put('/categories/reorder', async (c) => {
+    const body = await c.req.json<{ categoryIds: string[] }>()
+    for (let i = 0; i < body.categoryIds.length; i++) {
+      const id = body.categoryIds[i]
+      if (id) await repo.updateCategory({ id, sortOrder: i })
+    }
+    return c.json({ success: true })
+  })
+
   // Remove from library
   app.delete('/:id', async (c) => {
     const { id } = c.req.param()

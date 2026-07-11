@@ -2,11 +2,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { SandboxInstance } from './sandbox/interface.js'
 import { validatePlugin } from './validator.js'
-import { isIReaderSource, createIReaderAdapter, createJsDependencies } from './ireader-bridge.js'
+import { isIReaderSource, createIReaderAdapter, createJsDependencies, isJsonConfigSource, createJsonConfigAdapter } from './ireader-bridge.js'
 import { isTachiyomiSource, createTachiyomiAdapter } from './tachiyomi-bridge.js'
 import { isLNReaderSource, createLNReaderAdapter } from './lnreader-bridge.js'
 import { isJarFile, loadJarSource } from './jar-loader.js'
 import type { IReaderPluginAdapter } from './ireader-bridge.js'
+import type { IReaderJsonConfig } from './ireader-bridge.js'
 
 interface PluginWatcherOptions {
   pluginsDir: string
@@ -56,10 +57,13 @@ export class PluginLoader {
     // Load existing plugins
     await this.scanExisting()
 
-    // Watch for changes
+    // Watch for changes — .js AND .json files for IReader config sources
     this.watcher = fs.watch(this.pluginsDir, { recursive: true }, (_eventType: string | null, filename: string | null) => {
-      if (!filename || !filename.endsWith('.js')) return
-      this.debounceReload(filename.toString())
+      if (!filename) return
+      const name = filename.toString()
+      if (name.endsWith('.js') || name.endsWith('.json')) {
+        this.debounceReload(name)
+      }
     })
   }
 
@@ -86,10 +90,11 @@ export class PluginLoader {
 
   private async reloadPlugin(filename: string): Promise<void> {
     const filePath = path.join(this.pluginsDir, filename)
+
     // Derive the plugin ID from the parent directory name or filename
     const pluginId = filename.includes('/')
-      ? (filename.split('/')[0] ?? filename.replace(/\.js$/i, ''))
-      : filename.replace(/\.js$/i, '')
+      ? (filename.split('/')[0] ?? filename.replace(/\.[^/.]+$/i, ''))
+      : filename.replace(/\.[^/.]+$/i, '')
 
     if (!fs.existsSync(filePath)) {
       this.loadedPlugins.delete(filename)
@@ -100,7 +105,62 @@ export class PluginLoader {
       return
     }
 
+    // --- Handle IReader JSON config sources (selector-based definitions) ---
+    if (filename.endsWith('.json')) {
+      try {
+        const config: IReaderJsonConfig = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+        if (isJsonConfigSource(config)) {
+          const deps = createJsDependencies(config.baseUrl || `https://${pluginId}.local`)
+          const adapter = createJsonConfigAdapter(config, deps, pluginId)
+          this.ireaderAdapters.set(adapter.info.id, adapter)
+          this.loadedPlugins.set(filename, adapter.info.id)
+          await this.onLoaded?.(adapter.info.id)
+          await this.onIReaderLoaded?.(adapter.info.id, adapter)
+          return
+        }
+      } catch (err) {
+        throw new Error(`Invalid JSON config in ${filename}: ${err instanceof Error ? err.message : err}`)
+      }
+      return // Not a valid JSON config source, skip
+    }
+
+    // --- Handle JS files ---
     const rawCode = fs.readFileSync(filePath, 'utf-8')
+
+    // --- Detect UMD bundle format (IReaderSources.SourceRegistry) ---
+    if (rawCode.includes('IReaderSources') || rawCode.includes('SourceRegistry')) {
+      // UMD bundle: we can't easily extract individual sources, but we can register
+      // the bundle as a whole and let it self-initialize via SourceRegistry
+      try {
+        const mockContext = { module: { exports: {} }, exports: {}, console, global: globalThis }
+        const fn = new Function('module', 'exports', 'console', 'global', rawCode)
+        fn(mockContext.module, mockContext.exports, console, globalThis)
+
+        // Check if SourceRegistry was populated
+        const globalObj = globalThis as any
+        if (globalObj.IReaderSources?.SourceRegistry) {
+          const registry = globalObj.IReaderSources.SourceRegistry
+          const sourceIds = typeof registry.getSourceIds === 'function' ? registry.getSourceIds() : []
+          const allSources = typeof registry.getAllSources === 'function' ? registry.getAllSources() : []
+
+          for (const src of allSources) {
+            const s = src as Record<string, unknown>
+            if (isIReaderSource(s)) {
+              const deps = createJsDependencies((s as any).baseUrl || `https://${pluginId}.local`)
+              const adapter = createIReaderAdapter(s as any, deps)
+              const id = adapter.info.id
+              this.ireaderAdapters.set(id, adapter)
+              this.loadedPlugins.set(`${filename}::${id}`, id)
+              await this.onLoaded?.(id)
+              await this.onIReaderLoaded?.(id, adapter)
+            }
+          }
+
+          if (allSources.length > 0) return
+        }
+      } catch { /* fall through to normal JS loading */ }
+    }
+
     // Transform ESM export default to CommonJS module.exports so the sandbox
     // (which uses a (function(module,exports,require){...}) wrapper) can load it
     const code = rawCode.replace(/export\s+default\s+/g, 'module.exports = ')
@@ -167,11 +227,42 @@ export class PluginLoader {
   private async scanExisting(): Promise<void> {
     const entries = fs.readdirSync(this.pluginsDir, { recursive: true })
     for (const entry of entries) {
-      if (typeof entry === 'string' && entry.endsWith('.js')) {
-        try {
-          await this.reloadPlugin(entry)
-        } catch (err) {
-          console.error(`Failed to load plugin ${entry}:`, err)
+      if (typeof entry === 'string') {
+        // Match .js, .json (IReader config), and source.js in directories
+        if (entry.endsWith('.js') || entry.endsWith('.json')) {
+          try {
+            await this.reloadPlugin(entry)
+          } catch (err) {
+            console.error(`Failed to load plugin ${entry}:`, err)
+          }
+        }
+      }
+    }
+
+    // Also scan for directory-format sources (source.js inside extension dirs)
+    this.scanDirectorySources(this.pluginsDir)
+  }
+
+  /**
+   * Scan for IReader extension directories that contain source.js files
+   * (directory format: sources/en/freewebnovel/main/source.js → pluginId: freewebnovel)
+   */
+  private scanDirectorySources(dir: string): void {
+    if (!fs.existsSync(dir)) return
+    const entries = fs.readdirSync(dir, { withFileTypes: true })
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const subPath = path.join(dir, entry.name)
+        // Check for direct source.js
+        const sourceJs = path.join(subPath, 'source.js')
+        if (fs.existsSync(sourceJs)) {
+          const relativePath = path.relative(this.pluginsDir, sourceJs)
+          this.reloadPlugin(relativePath).catch(err =>
+            console.error(`Failed to load directory source ${relativePath}:`, err)
+          )
+        } else {
+          // Recurse
+          this.scanDirectorySources(subPath)
         }
       }
     }

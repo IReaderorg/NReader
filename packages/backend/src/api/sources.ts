@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import fs from 'node:fs'
 import path from 'node:path'
+import crypto from 'node:crypto'
 
 export function createSourcesRouter(pluginService: {
   getAllPlugins(): any[]
@@ -137,9 +138,13 @@ export function createSourcesRouter(pluginService: {
 
   /**
    * Install a source from a URL. Downloads the JS file and saves to plugins directory.
+   * Supports:
+   * - Direct .js source files
+   * - IReader bundle URLs (sources-bundle.js) — saves to a subdirectory
+   * - JSON config sources (.json)
    */
   app.post('/install', async (c) => {
-    const { url, id } = await c.req.json<{ url: string; id?: string }>()
+    const { url, id, initFunction, bundle } = await c.req.json<{ url: string; id?: string; initFunction?: string; bundle?: boolean }>()
     if (!url) return c.json({ error: 'url is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
     try {
       const res = await fetch(url)
@@ -149,8 +154,29 @@ export function createSourcesRouter(pluginService: {
       const pluginId = id || url.split('/').pop()?.replace(/\.js$/i, '') || 'installed-source'
       const pluginsDir = process.env.PLUGINS_DIR || path.resolve(process.cwd(), 'plugins')
       if (!fs.existsSync(pluginsDir)) fs.mkdirSync(pluginsDir, { recursive: true })
-      const dest = path.join(pluginsDir, `${pluginId}.js`)
-      fs.writeFileSync(dest, code, 'utf-8')
+
+      // If it's an IReader bundle (sources-bundle.js), save to a named subdirectory
+      // so the loader can detect it as a directory-format source
+      let dest: string
+      if (bundle || url.includes('sources-bundle')) {
+        const subDir = path.join(pluginsDir, pluginId)
+        if (!fs.existsSync(subDir)) fs.mkdirSync(subDir, { recursive: true })
+        dest = path.join(subDir, 'source.js')
+        // If initFunction is specified, wrap the bundle to auto-init that source
+        if (initFunction) {
+          const wrappedCode = `(function() {\n${code}\n// Auto-init the requested source\nif (typeof IReaderSources !== 'undefined' && IReaderSources.SourceRegistry) {\n  var src = IReaderSources.SourceRegistry.getSource('${pluginId}');\n  if (src) module.exports = src;\n}\n})();`
+          fs.writeFileSync(dest, wrappedCode, 'utf-8')
+        } else {
+          fs.writeFileSync(dest, code, 'utf-8')
+        }
+      } else if (url.endsWith('.json')) {
+        // JSON config source
+        dest = path.join(pluginsDir, `${pluginId}.json`)
+        fs.writeFileSync(dest, code, 'utf-8')
+      } else {
+        dest = path.join(pluginsDir, `${pluginId}.js`)
+        fs.writeFileSync(dest, code, 'utf-8')
+      }
 
       return c.json({ success: true, pluginId, path: dest })
     } catch (err) {
@@ -160,7 +186,9 @@ export function createSourcesRouter(pluginService: {
 
   /**
    * List available sources from a repository URL.
-   * The repo should return a JSON array of source descriptors.
+   * Supports:
+   * - Standard JSON array of source descriptors
+   * - IReader js-index.json format (array of objects with pkg, name, id, lang, initFunction)
    */
   app.get('/repository', async (c) => {
     const repoUrl = c.req.query('url')
@@ -168,7 +196,33 @@ export function createSourcesRouter(pluginService: {
     try {
       const res = await fetch(repoUrl)
       if (!res.ok) throw new Error(`Failed to fetch repo: ${res.statusText}`)
-      const sources = await res.json()
+      const data = await res.json()
+
+      // Normalize to standard source list format
+      let sources: any[]
+      if (Array.isArray(data)) {
+        if (data.length > 0 && data[0].pkg && data[0].initFunction) {
+          // IReader js-index.json format
+          sources = data.map((s: any) => ({
+            id: String(s.id || s.name?.toLowerCase().replace(/[^a-z0-9]/g, '')),
+            name: s.name,
+            lang: s.lang || 'en',
+            baseUrl: `https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repov2/js-dist/${s.file || 'sources-bundle.js'}`,
+            version: s.version || '1.0.0',
+            initFunction: s.initFunction,
+            pkg: s.pkg,
+            bundle: true,
+          }))
+        } else {
+          // Standard format
+          sources = data
+        }
+      } else if (data.sources && Array.isArray(data.sources)) {
+        sources = data.sources
+      } else {
+        sources = []
+      }
+
       return c.json(sources)
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : String(err), code: 'REPO_ERROR', status: 502 }, 502)

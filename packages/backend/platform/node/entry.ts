@@ -6,6 +6,11 @@ import { wsManager } from '../../src/ws/ws-manager.js'
 
 const PORT = Number(process.env.PORT) || 8080
 
+// Set DB path for persistent storage (default: ./data/ireader.db in project root)
+if (!process.env.IREADER_DB_PATH) {
+  process.env.IREADER_DB_PATH = './data/ireader.db'
+}
+
 const app = await startApp('node')
 
 const server = serve({ fetch: app.fetch, port: PORT }, (info) => {

@@ -418,11 +418,11 @@ function ReadingBreakSettingsInline() {
 
 function GeneralTab() {
   const {
-    mode, autoScrollSpeed,
+    mode, autoScrollEnabled, autoScrollSpeed,
     immersiveMode, showScrollbar, showReadingTime, volumeNavigation,
     screenAwake, bionicReading, webviewBg, selectableMode, reducedAnimations,
     contentFilterEnabled, pagerDirection,
-    setMode, setAutoScrollSpeed,
+    setMode, setAutoScrollEnabled, setAutoScrollSpeed,
     setImmersiveMode, setShowScrollbar, setShowReadingTime, setVolumeNavigation,
     setScreenAwake, setBionicReading, setWebviewBg, setSelectableMode, setReducedAnimations,
     setPagerDirection,
@@ -453,24 +453,27 @@ function GeneralTab() {
       </div>
 
       <SectionHeader title="Auto-scroll" />
-      <div className="flex items-center gap-3 px-4 py-2">
-        <button
-          onClick={() => setAutoScrollSpeed(autoScrollSpeed > 0 ? 0 : 5)}
-          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
-            autoScrollSpeed > 0 ? 'bg-accent text-black' : 'bg-surface-hover/50 text-text-secondary'
-          }`}
-        >
-          {autoScrollSpeed > 0 ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-        </button>
-        <span className="text-xs text-text-secondary shrink-0">Speed</span>
-        <input
-          type="range" min={1} max={10} step={1}
-          value={autoScrollSpeed || 5}
-          onChange={e => setAutoScrollSpeed(Number(e.target.value))}
-          className="flex-1 h-1.5 appearance-none bg-white/20 rounded-full accent-[hsl(var(--accent))]"
-        />
-        <span className="text-xs text-text-muted tabular-nums w-5">{autoScrollSpeed || 5}</span>
-      </div>
+      <ToggleRow label="Auto-scroll" subtitle="Automatically scroll content" checked={autoScrollEnabled} onChange={setAutoScrollEnabled} />
+      {autoScrollEnabled && (
+        <div className="flex items-center gap-3 px-4 py-2">
+          <button
+            onClick={() => setAutoScrollSpeed(autoScrollSpeed > 0 ? 0 : 5)}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
+              autoScrollSpeed > 0 ? 'bg-accent text-black' : 'bg-surface-hover/50 text-text-secondary'
+            }`}
+          >
+            {autoScrollSpeed > 0 ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+          </button>
+          <span className="text-xs text-text-secondary shrink-0">Speed</span>
+          <input
+            type="range" min={1} max={10} step={1}
+            value={autoScrollSpeed || 5}
+            onChange={e => setAutoScrollSpeed(Number(e.target.value))}
+            className="flex-1 h-1.5 appearance-none bg-white/20 rounded-full accent-[hsl(var(--accent))]"
+          />
+          <span className="text-xs text-text-muted tabular-nums w-5">{autoScrollSpeed || 5}</span>
+        </div>
+      )}
 
       <SectionHeader title="Pager" />
       <div className="flex items-center justify-between px-4 py-2">
@@ -532,11 +535,15 @@ function GeneralTab() {
 const CUSTOM_BG_THEMES = BG_THEMES.map(t => ({ id: t.id, name: t.name, colors: { bg: t.bg, textColor: t.text } }))
 
 function ColorsTab({ themes }: { themes: { id: string; name: string; colors: Record<string, string> }[] }) {
-  const { selectedThemeId, setTheme } = useReaderStore()
+  const { selectedThemeId, setTheme, brightness, autoBrightness, setBrightness, setAutoBrightness } = useReaderStore()
   const allThemes = [...themes, ...CUSTOM_BG_THEMES.filter(t => !themes.find(th => th.id === t.id))]
 
   return (
     <div className="overflow-y-auto h-full pb-4">
+      <SectionHeader title="Brightness" />
+      <ToggleRow label="Auto Brightness" subtitle="Automatically adjust brightness" checked={autoBrightness} onChange={setAutoBrightness} />
+      <SliderRow label="Brightness" value={brightness} displayValue={`${brightness}%`} min={10} max={100} step={1} onChange={setBrightness} />
+
       <SectionHeader title="Background Theme" />
       <div className="grid grid-cols-3 gap-2 px-4 py-2">
         {allThemes.map(theme => (

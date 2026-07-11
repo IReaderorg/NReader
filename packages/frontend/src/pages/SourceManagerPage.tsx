@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { api, type SourceInfo } from '../api/client'
 import { LoadingState, ErrorState, EmptyState } from '../components/SharedStates'
-import { Power, Settings2, Link, Globe, Plus } from 'lucide-react'
+import { Power, Settings2, Link, Globe, Plus, BookOpen } from 'lucide-react'
 import { Link as RouterLink } from 'react-router-dom'
 
 export function SourceManagerPage() {
@@ -12,9 +12,12 @@ export function SourceManagerPage() {
   // Repository state
   const [showRepo, setShowRepo] = useState(false)
   const [repoUrl, setRepoUrl] = useState('')
-  const [repoSources, setRepoSources] = useState<Array<{ id: string; name: string; lang: string; baseUrl: string; version: string }>>([])
+  const [repoSources, setRepoSources] = useState<Array<{ id: string; name: string; lang: string; baseUrl: string; version: string; initFunction?: string; pkg?: string; bundle?: boolean }>>([])
   const [repoLoading, setRepoLoading] = useState(false)
   const [installing, setInstalling] = useState<string | null>(null)
+
+  // Predefined repo URLs for quick-add
+  const IREADER_REPO_URL = 'https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repov2/js-dist/js-index.json'
 
   const load = () => {
     setLoading(true)
@@ -42,12 +45,18 @@ export function SourceManagerPage() {
     }
   }, [repoUrl])
 
-  // Install source from repo
-  const installSource = useCallback(async (sourceUrl: string, sourceId: string) => {
-    setInstalling(sourceId)
+  // Install source from repo (handles IReader bundle format with initFunction)
+  const installSource = useCallback(async (src: { id: string; name: string; baseUrl: string; initFunction?: string; pkg?: string; bundle?: boolean }) => {
+    setInstalling(src.id)
     try {
-      await api.installSource(sourceUrl, sourceId)
-      alert(`Source "${sourceId}" installed successfully!`)
+      // For IReader bundle sources (sources-bundle.js), pass initFunction + bundle flag
+      const isBundle = src.bundle || src.baseUrl.includes('sources-bundle')
+      if (isBundle) {
+        await api.installSource(src.baseUrl, src.id, { initFunction: src.initFunction, bundle: true })
+      } else {
+        await api.installSource(src.baseUrl, src.id)
+      }
+      alert(`Source "${src.name}" installed successfully!`)
       load()
     } catch (err) {
       alert(`Installation failed: ${err instanceof Error ? err.message : String(err)}`)
@@ -68,15 +77,29 @@ export function SourceManagerPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <h1 className="text-base font-bold text-text">Source Manager</h1>
-        <button
-          onClick={() => setShowRepo(!showRepo)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-accent text-black text-xs font-medium hover:bg-accent/90 transition-colors"
-        >
-          <Globe className="w-3.5 h-3.5" strokeWidth={1.5} />
-          {showRepo ? 'Hide Repo' : 'Add Repo'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setRepoUrl(IREADER_REPO_URL)
+              setShowRepo(true)
+              setTimeout(() => browseRepo(), 100)
+            }}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-500 transition-colors"
+            title="Browse the official IReader extensions repository (50+ pre-built JS sources)"
+          >
+            <BookOpen className="w-3.5 h-3.5" strokeWidth={1.5} />
+            Add IReader Repo
+          </button>
+          <button
+            onClick={() => setShowRepo(!showRepo)}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-accent text-black text-xs font-medium hover:bg-accent/90 transition-colors"
+          >
+            <Globe className="w-3.5 h-3.5" strokeWidth={1.5} />
+            {showRepo ? 'Hide Repo' : 'Add Repo'}
+          </button>
+        </div>
       </div>
 
       {/* Repository panel */}
@@ -84,7 +107,7 @@ export function SourceManagerPage() {
         <div className="mb-4 p-3 rounded-xl bg-surface border border-border-light space-y-2">
           <p className="text-xs font-medium text-text">Source Repository</p>
           <p className="text-[10px] text-text-muted">
-            Enter a repository URL to browse available IReader-compatible sources.
+            Enter a repository URL (IReader, LNReader, or Tachiyomi compatible). The official IReader extensions repo provides 50+ novel sources as JS bundles.
           </p>
           <div className="flex gap-2">
             <input
@@ -116,7 +139,7 @@ export function SourceManagerPage() {
                     <p className="text-[10px] text-text-muted">{src.lang.toUpperCase()} • v{src.version}</p>
                   </div>
                   <button
-                    onClick={() => installSource(src.baseUrl + '/source.js', src.id)}
+                    onClick={() => installSource({ id: src.id, name: src.name, baseUrl: src.baseUrl, initFunction: src.initFunction, bundle: src.bundle })}
                     disabled={installing === src.id}
                     className="px-2.5 py-1 rounded-lg bg-accent text-black text-[10px] font-medium hover:bg-accent/90 disabled:opacity-50 transition-colors shrink-0"
                   >

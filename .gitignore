@@ -38,3 +38,7 @@ test-results/
 Thumbs.db
 .turbo/
 .vite/
+
+# Database
+data/
+backups/

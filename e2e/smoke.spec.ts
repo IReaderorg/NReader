@@ -30,8 +30,9 @@ test('popular endpoint returns manga list', async ({ request }) => {
 
 test('frontend loads and navigates to sources', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('main').getByRole('heading', { name: /IReader/i })).toBeVisible()
+  // The app loads (root redirects to /library), page title shows in header
+  await expect(page.getByRole('heading', { name: /Library/i }).first()).toBeVisible({ timeout: 10000 })
   // Bottom nav: click the Browse tab to reach sources page
   await page.getByRole('navigation').getByRole('link', { name: /Browse/i }).click()
-  await expect(page.getByRole('heading', { name: /Sources/i })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Sources/i }).first()).toBeVisible()
 })

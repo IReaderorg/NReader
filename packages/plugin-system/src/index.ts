@@ -16,6 +16,10 @@ export {
   getIReaderAdapterIds,
   createJsDependencies,
 } from './ireader-bridge.js'
+export {
+  isJsonConfigSource,
+  createJsonConfigAdapter,
+} from './ireader-bridge.js'
 export type {
   IReaderSource,
   IReaderMangaInfo,
@@ -24,6 +28,7 @@ export type {
   IReaderPage,
   IReaderJsDependencies,
   IReaderPluginAdapter,
+  IReaderJsonConfig,
 } from './ireader-bridge.js'
 export {
   isLNReaderSource,

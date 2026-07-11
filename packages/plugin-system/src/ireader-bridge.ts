@@ -455,3 +455,217 @@ export function createJsDependencies(baseUrl = ''): IReaderJsDependencies {
     },
   }
 }
+
+// ========================================================================
+// IReader JSON Config Source (selector-based definition format)
+// ========================================================================
+//
+// IReader extensions can define sources as pure JSON configs with CSS selectors.
+// These are used by the iOS/web runtime when Kotlin compilation isn't available.
+// Example: e1be5cc3-0144-44d0-8517-801c039c045f.json
+//
+// The JSON config format:
+// {
+//   "name": "NovelBuddy",
+//   "lang": "en",
+//   "baseUrl": "https://novelbuddy.io",
+//   "version": "1.0",
+//   "popularUrl": "/top/month",
+//   "latestUrl": "/latest?page={{page}}",
+//   "searchUrl": "/search?q={{query}}",
+//   "selectors": {
+//     "author": "span",
+//     "cover": "img",
+//     "description": ".content",
+//     "genres": "p",
+//     "status": "span",
+//     "title": "h1",
+//     "chapter-item": "#c-100",
+//     "chapter-link": "#c-100 a",
+//     "chapter-name": ".chapter-title",
+//     "content": "#chapter__content",
+//     "novel-item": ".book-detailed-item",
+//     "explore-cover": "img",
+//     "explore-link": "a",
+//     "explore-title": "a"
+//   },
+//   "attributes": {
+//     "chapter-item": "innerHTML",
+//     "chapter-link": "href",
+//     "content": "innerHTML",
+//     "cover": "src",
+//     "explore-cover": "src",
+//     "explore-link": "href",
+//     "explore-title": "title",
+//     "genres": "innerHTML",
+//     "novel-item": "innerHTML"
+//   }
+// }
+
+export interface IReaderJsonConfig {
+  name: string
+  lang?: string
+  baseUrl: string
+  version?: string
+  popularUrl?: string
+  latestUrl?: string
+  searchUrl?: string
+  selectors: Record<string, string>
+  attributes?: Record<string, string>
+  /** Optional: custom HTTP headers */
+  headers?: Record<string, string>
+}
+
+/**
+ * Detect whether a loaded JSON object follows the IReader JSON config format.
+ */
+export function isJsonConfigSource(config: unknown): config is IReaderJsonConfig {
+  if (!config || typeof config !== 'object') return false
+  const c = config as Record<string, unknown>
+  return (
+    typeof c.name === 'string' &&
+    typeof c.baseUrl === 'string' &&
+    typeof c.selectors === 'object' &&
+    c.selectors !== null
+  )
+}
+
+/**
+ * Create an ireader-next plugin adapter from an IReader JSON config source.
+ * Wraps the config into a virtual IReaderSource that uses fetch + CSS selectors
+ * to extract manga data from HTML pages.
+ */
+export function createJsonConfigAdapter(
+  config: IReaderJsonConfig,
+  deps: IReaderJsDependencies,
+  defaultId?: string,
+): IReaderPluginAdapter {
+  const id = defaultId || config.name.toLowerCase().replace(/[^a-z0-9]/g, '')
+  const baseUrl = config.baseUrl.replace(/\/+$/, '')
+  const sel = config.selectors
+  const attrs = config.attributes ?? {}
+
+  function getAttr(key: string, defaultAttr = 'text'): string {
+    return attrs[key] || defaultAttr
+  }
+
+  /** Fetch HTML, parse, and extract text/attribute from element matching selector */
+  async function extractText(url: string, selector: string, attr?: string): Promise<string> {
+    const res = await deps.fetch(url, { headers: config.headers })
+    const html = await res.text()
+    const doc = deps.parseHTML(html)
+    // Simple selector extraction — works with linkedom/cheerio
+    const el = (doc as any).querySelector?.(selector) ?? (doc as any).find?.(selector)?.[0]
+    if (!el) return ''
+    if (attr === 'innerHTML' || attr === 'html') {
+      return typeof el.innerHTML === 'string' ? el.innerHTML : ''
+    }
+    if (attr && attr !== 'text') return el.getAttribute?.(attr) ?? ''
+    return el.textContent?.trim?.() ?? el.text?.()?.trim?.() ?? ''
+  }
+
+  /** Extract multiple elements from HTML */
+  async function extractList(url: string, selector: string, linkAttr: string, textAttr: string): Promise<Array<{ href: string; text: string }>> {
+    const res = await deps.fetch(url, { headers: config.headers })
+    const html = await res.text()
+    const doc = deps.parseHTML(html)
+    const elements = (doc as any).querySelectorAll?.(selector) ?? (doc as any).find?.(selector) ?? []
+    const results: Array<{ href: string; text: string }> = []
+    for (const el of elements) {
+      const href = el.getAttribute?.(linkAttr) ?? el.getAttribute?.('href') ?? ''
+      const text = textAttr === 'innerHTML' ? el.innerHTML?.trim?.() ?? '' : el.textContent?.trim?.() ?? el.text?.()?.trim?.() ?? ''
+      if (text) {
+        results.push({
+          href: href.startsWith('http') ? href : `${baseUrl}${href.startsWith('/') ? '' : '/'}${href}`,
+          text,
+        })
+      }
+    }
+    return results
+  }
+
+  const virtualSource: IReaderSource = {
+    id,
+    name: config.name,
+    lang: config.lang || 'en',
+    baseUrl,
+    versionId: 1,
+
+    async getMangaList(_sort: any, page: number): Promise<IReaderMangasPageInfo> {
+      const url = (config.popularUrl || config.latestUrl || '/').replace('{{page}}', String(page))
+      const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`
+      const items = await extractList(fullUrl, sel['novel-item'] || 'a', getAttr('explore-link', 'href'), getAttr('explore-title', 'text'))
+      const mangaList: IReaderMangaInfo[] = items.map((item, i) => ({
+        key: item.href,
+        title: item.text,
+        cover: '',
+      }))
+      return { mangas: mangaList, hasNextPage: items.length > 0 }
+    },
+
+    async searchManga(query: string, _page: number): Promise<IReaderMangasPageInfo> {
+      if (!config.searchUrl) return { mangas: [], hasNextPage: false }
+      const url = config.searchUrl.replace('{{query}}', encodeURIComponent(query)).replace('{{page}}', '1')
+      const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`
+      const items = await extractList(fullUrl, sel['novel-item'] || 'a', getAttr('explore-link', 'href'), getAttr('explore-title', 'text'))
+      const mangaList: IReaderMangaInfo[] = items.map((item, i) => ({
+        key: item.href,
+        title: item.text,
+        cover: '',
+      }))
+      return { mangas: mangaList, hasNextPage: items.length > 0 }
+    },
+
+    async getMangaDetails(manga: IReaderMangaInfo): Promise<IReaderMangaInfo> {
+      const title = await extractText(manga.key, sel['title'] || 'h1', 'text')
+      const cover = await extractText(manga.key, sel['cover'] || 'img', getAttr('cover', 'src'))
+      const description = await extractText(manga.key, sel['description'] || 'p', getAttr('content', 'innerHTML'))
+      const author = await extractText(manga.key, sel['author'] || 'span', 'text')
+      const status = await extractText(manga.key, sel['status'] || 'span', 'text')
+      const genresRaw = await extractText(manga.key, sel['genres'] || 'p', getAttr('genres', 'innerHTML'))
+      return {
+        key: manga.key,
+        title: title || manga.title,
+        cover,
+        description,
+        author,
+        status: status.toLowerCase().includes('ongoing') ? 1 : status.toLowerCase().includes('complete') ? 2 : 0,
+        genres: genresRaw ? genresRaw.split(/[,/]/).map(g => g.trim()).filter(Boolean) : [],
+      }
+    },
+
+    async getChapterList(manga: IReaderMangaInfo): Promise<IReaderChapterInfo[]> {
+      const chapterSelector = sel['chapter-link'] || 'a'
+      const items = await extractList(manga.key, chapterSelector, getAttr('chapter-link', 'href'), getAttr('chapter-item', 'innerHTML'))
+      return items.map((item, i) => ({
+        key: item.href,
+        name: item.text || `Chapter ${i + 1}`,
+        number: i + 1,
+        dateUpload: Date.now(),
+      }))
+    },
+
+    async getPageList(chapter: IReaderChapterInfo): Promise<IReaderPage[]> {
+      const content = await extractText(chapter.key, sel['content'] || 'body', getAttr('content', 'innerHTML'))
+      // Strip HTML tags and split by paragraphs/br
+      const text = content.replace(/<br\s*\/?>/gi, '\n').replace(/<\/?[^>]+(>|$)/g, '').trim()
+      const paragraphs = text.split(/\n+/).filter(p => p.trim().length > 0)
+      if (paragraphs.length > 0) {
+        return paragraphs.map(p => ({ type: 'Text', text: p.trim() }))
+      }
+      return [{ type: 'Text', text: '' }]
+    },
+
+    getText: undefined, // Will be handled by getPageList returning Text pages
+  }
+
+  // Wire getText through getPageList
+  virtualSource.getText = async (chapter: IReaderChapterInfo): Promise<string> => {
+    const pages = await virtualSource.getPageList!(chapter)
+    return pages.filter((p): p is { type: 'Text'; text: string } => p.type === 'Text')
+      .map(p => p.text)
+      .join('\n\n')
+  }
+
+  return createIReaderAdapter(virtualSource, deps)
+}

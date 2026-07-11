@@ -3,6 +3,8 @@ import { createAuthRouter } from './api/auth.js'
 import { createCommunityRouter } from './api/community.js'
 import { createLeaderboardRouter } from './api/leaderboard.js'
 import { createQuotesRouter } from './api/quotes.js'
+import { createChapterReviewsRouter } from './api/chapter-reviews.js'
+import { createChapterArtRouter } from './api/chapter-art.js'
 import { cors } from 'hono/cors'
 import path from 'node:path'
 import { errorHandler } from './middleware/error-handler.js'
@@ -34,7 +36,7 @@ import { proxyApp } from './api/proxy.js'
 import { NodeVmSandbox } from '@ireader/plugin-system'
 import { PluginService } from './plugins/plugin-service.js'
 import { createDatabase, runMigrations, migration_001, migration_002, migration_003 } from '@ireader/storage'
-import { migration_004, migration_005, migration_006 } from '@ireader/storage'
+import { migration_004, migration_005, migration_006, migration_007 } from '@ireader/storage'
 import { SqliteLibraryRepository, SqliteHistoryRepository, SqliteSettingsRepository, SqliteDownloadRepository, SqliteGlossaryRepository } from '@ireader/storage'
 
 const app = new Hono()
@@ -45,7 +47,7 @@ const pluginsDir = path.resolve(process.cwd(), 'plugins')
 
 export async function startApp(dbType?: 'memory' | 'node' | 'capacitor'): Promise<Hono> {
   const db = await createDatabase(dbType)
-  await runMigrations(db, [migration_001, migration_002, migration_003, migration_004, migration_005, migration_006])
+  await runMigrations(db, [migration_001, migration_002, migration_003, migration_004, migration_005, migration_006, migration_007])
 
   const libraryRepo = new SqliteLibraryRepository(db)
   const historyRepo = new SqliteHistoryRepository(db)
@@ -127,7 +129,10 @@ export async function startApp(dbType?: 'memory' | 'node' | 'capacitor'): Promis
   })
 
   app.get('/api/v1/plugins/marketplace', (c) => {
-    return c.json([])
+    return c.json([
+      { id: 'demo-source', name: 'Demo Source', type: 'source', version: '1.0.0', description: 'Built-in demo source', author: 'IReader' },
+      { id: 'jsonplaceholder', name: 'JSONPlaceholder', type: 'source', version: '1.0.0', description: 'Test source using JSONPlaceholder API', author: 'IReader' },
+    ])
   })
 
   // Social routes
@@ -135,6 +140,10 @@ export async function startApp(dbType?: 'memory' | 'node' | 'capacitor'): Promis
   app.route('/api/v1/community', createCommunityRouter(db))
   app.route('/api/v1/leaderboard', createLeaderboardRouter(db))
   app.route('/api/v1/quotes', createQuotesRouter(db))
+
+  // Chapter reviews & art
+  app.route('/api/v1/chapter/reviews', createChapterReviewsRouter(db))
+  app.route('/api/v1/chapter/art', createChapterArtRouter(db))
 
   app.route('/api/v1/proxy', proxyApp)
   app.route('/api/v1', createStatsRouter(libraryRepo, downloadRepo))

@@ -262,11 +262,11 @@ export const api = {
   getMarketplace: () => apiFetch<Array<{ id: string; name: string; description: string; type: string; version: string; author: string; installUrl: string; downloads: number; rating: number }>>('/plugins/marketplace'),
 
   // Source installation from repository
-  installSource: (url: string, id?: string) => apiFetch<{ success: boolean; pluginId: string; path: string }>('/sources/install', {
+  installSource: (url: string, id?: string, options?: { initFunction?: string; bundle?: boolean }) => apiFetch<{ success: boolean; pluginId: string; path: string }>('/sources/install', {
     method: 'POST',
-    body: JSON.stringify({ url, id }),
+    body: JSON.stringify({ url, id, ...options }),
   }),
-  listRepository: (url: string) => apiFetch<Array<{ id: string; name: string; lang: string; baseUrl: string; version: string }>>(`/sources/repository?url=${encodeURIComponent(url)}`),
+  listRepository: (url: string) => apiFetch<Array<{ id: string; name: string; lang: string; baseUrl: string; version: string; initFunction?: string; pkg?: string; bundle?: boolean }>>(`/sources/repository?url=${encodeURIComponent(url)}`),
 
   // Source migration
   getMigrationTargets: (query: string, excludeSourceId?: string) =>
@@ -404,6 +404,15 @@ export const api = {
     apiFetch<CharacterArt>('/character-art', { method: 'POST', body: JSON.stringify(data) }),
   deleteCharacterArt: (id: string) =>
     apiFetch<{ success: boolean }>(`/character-art/${id}`, { method: 'DELETE' }),
+
+  // Chapter Reviews
+  getChapterReviews: (chapterId: string) => apiFetch<Array<{ id: string; userId: string; username: string; displayName?: string; avatarUrl?: string; rating: number; content: string; createdAt: string }>>(`/chapter/reviews?chapterId=${enc(chapterId)}`),
+  postChapterReview: (data: { chapterId: string; rating: number; content: string }) =>
+    apiFetch<{ id: string }>('/chapter/reviews', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Chapter Art Generation
+  generateChapterArt: (data: { chapterId: string; sourceId: string; mangaId: string }) =>
+    apiFetch<{ imageUrl: string; caption?: string }>('/chapter/art', { method: 'POST', body: JSON.stringify(data) }),
 
   // Reading Presets
   getPresets: () => apiFetch<Array<{ id: string; name: string; fontSize: number; lineHeight: number; paragraphSpacing: number; paragraphIndent: number; textAlignment: string; colorFilter: string }>>('/reader/presets'),

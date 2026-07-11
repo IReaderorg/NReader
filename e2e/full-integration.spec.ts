@@ -17,6 +17,7 @@ test.describe('Section 1: Health & Connectivity', () => {
 // ============================================================
 // Section 2: Library API (CRUD)
 // ============================================================
+test.describe.configure({ mode: 'serial' })
 test.describe('Section 2: Library API', () => {
   let mangaId: string
 

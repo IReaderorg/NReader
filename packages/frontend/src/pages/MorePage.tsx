@@ -1,8 +1,26 @@
 import { Link } from 'react-router-dom'
-import { Info, Shield, Wifi, Settings2, FileText, ArrowRight, Volume2, Languages, Download, HardDrive, Puzzle, BarChart3, CalendarDays } from 'lucide-react'
+import { Info, Shield, Wifi, Settings2, FileText, ArrowRight, Volume2, Languages, Download, HardDrive, Puzzle, BarChart3, CalendarDays, Globe, Image, Users, Trophy, Quote, User, Cloud, Database } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 const sections = [
+  {
+    icon: Globe,
+    label: 'General Settings',
+    desc: 'Language, startup page, behavior',
+    to: '/settings/general',
+  },
+  {
+    icon: User,
+    label: 'Profile',
+    desc: 'Avatar, username, bio, reading stats',
+    to: '/profile',
+  },
+  {
+    icon: Cloud,
+    label: 'Cloud Backup',
+    desc: 'Google Drive backup & restore',
+    to: '/backup/cloud',
+  },
   {
     icon: Shield,
     label: 'Security',
@@ -20,6 +38,12 @@ const sections = [
     label: 'Advanced',
     desc: 'Debug mode, cache management, data reset, experimental features',
     to: '/settings/advanced',
+  },
+  {
+    icon: Database,
+    label: 'Storage',
+    desc: 'Cache, database stats, disk usage',
+    to: '/settings/storage',
   },
   {
     icon: FileText,
@@ -50,6 +74,14 @@ export function MorePage() {
         <LinkItem icon={Download} label="Downloads" desc="Manage downloaded chapters" to="/downloads" />
         <LinkItem icon={BarChart3} label="Reading Stats" desc="Track your reading time and progress" to="/stats" />
         <LinkItem icon={CalendarDays} label="Streaks" desc="Reading streak history and records" to="/stats/streaks" />
+
+        {/* Social section */}
+        <div className="my-3 border-t border-border-light" />
+        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5 px-1">Social</p>
+        <LinkItem icon={Users} label="Community" desc="Activity feed, friends' reading" to="/community" />
+        <LinkItem icon={Trophy} label="Leaderboard" desc="Reading rankings" to="/leaderboard" />
+        <LinkItem icon={Quote} label="Quotes" desc="Saved book quotes" to="/quotes" />
+        <LinkItem icon={Image} label="Character Art" desc="Browse character artwork" to="/character-art" />
 
         {/* Divider */}
         <div className="my-3 border-t border-border-light" />

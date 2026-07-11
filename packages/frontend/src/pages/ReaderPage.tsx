@@ -5,7 +5,7 @@ import { useReaderStore, type TextReplacementEntry } from '../store/reader-store
 import { useHistoryStore } from '../store/history-store'
 import { useTtsStore } from '../store/tts-store'
 import { WebtoonReader, PagerReader, TextReader } from '@ireader/reader-engine'
-import { Loader2, Languages, Volume2, Gauge, ChevronLeft, ChevronRight, Play } from 'lucide-react'
+import { Loader2, Languages, Volume2, Gauge, ChevronLeft, ChevronRight, Play, Copy, Share2, Quote, X, Star, Puzzle, Sliders } from 'lucide-react'
 import { ReaderTopBar } from '../components/ReaderTopBar'
 import { ReaderBottomBar } from '../components/ReaderBottomBar'
 import { FindInChapterBar } from '../components/FindInChapterBar'
@@ -18,6 +18,10 @@ import { ReadingStatsPanel } from '../components/ReadingStatsPanel'
 import { TranslationPanel } from '../components/TranslationPanel'
 import { ReadingBreakReminder } from '../components/ReadingBreakReminder'
 import { TextReplaceBar } from '../components/TextReplaceBar'
+import { ChaptersSlider } from '../components/ChaptersSlider'
+import { PreloadIndicator } from '../components/PreloadIndicator'
+import { ReaderGamificationOverlay } from '../components/ReaderGamificationOverlay'
+import { ReaderPluginPanel } from '../components/ReaderPluginPanel'
 import type { IssueCategory } from '../components/ReportChapterDialog'
 import type { ReaderThemeColors } from '@ireader/reader-engine'
 
@@ -51,7 +55,7 @@ export function ReaderPage() {
     selectedThemeId,
     lineHeight, paragraphSpacing, paragraphIndent, textAlignment,
     colorFilter,    contentFilterEnabled, contentFilterPatterns,
-    autoScrollSpeed,
+    autoScrollEnabled, autoScrollSpeed,
     pagerDirection,
     setMode,
     immersiveMode, showScrollbar, showReadingTime, volumeNavigation,
@@ -60,6 +64,8 @@ export function ReaderPage() {
     isBookmarked, setBookmarked,
     openChapter,
     readingBreak,
+    setAutoScrollEnabled,
+    chaptersSliderVisible, setChaptersSliderVisible,
   } = useReaderStore()
 
   const { recordProgress } = useHistoryStore()
@@ -98,6 +104,20 @@ export function ReaderPage() {
 
   // Reading break reminder
   const [breakReminderVisible, setBreakReminderVisible] = useState(false)
+
+  // Copy mode
+  const [copyToolbarVisible, setCopyToolbarVisible] = useState(false)
+  const [selectedText, setSelectedText] = useState('')
+
+  // Review dialog
+  const [reviewDialogVisible, setReviewDialogVisible] = useState(false)
+
+  // Art generation dialog
+  const [artDialogVisible, setArtDialogVisible] = useState(false)
+  const [artGenerated, setArtGenerated] = useState<{ imageUrl: string; caption?: string } | null>(null)
+  const [artGenerating, setArtGenerating] = useState(false)
+  // Plugin panel
+  const [pluginPanelVisible, setPluginPanelVisible] = useState(false)
 
   // Reading session timer
   const [sessionStartTime] = useState(() => Date.now())
@@ -523,6 +543,10 @@ export function ReaderPage() {
             setBarsVisible(true)
           }
           break
+        case 'a':
+          e.preventDefault()
+          useReaderStore.getState().setAutoScrollEnabled(!useReaderStore.getState().autoScrollEnabled)
+          break
         case 't':
           setMode(mode === 'webtoon' ? 'pager' : mode === 'pager' ? 'text' : 'webtoon')
           break
@@ -596,7 +620,7 @@ export function ReaderPage() {
   const autoScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    if (mode !== 'text' || autoScrollSpeed <= 0 || !autoScrollActive) return
+    if (mode !== 'text' || !autoScrollEnabled || autoScrollSpeed <= 0 || !autoScrollActive) return
     const container = document.querySelector('[data-reader-content]') as HTMLElement | null
     if (!container) return
     const pixelsPerTick = 0.5 + (autoScrollSpeed / 10) * 4
@@ -620,6 +644,67 @@ export function ReaderPage() {
       container.removeEventListener('touchmove', onUserScroll)
     }
   }, [mode, autoScrollSpeed, autoScrollActive])
+
+  // --- Copy mode / text selection toolbar ---
+  useEffect(() => {
+    if (!selectableMode) {
+      setCopyToolbarVisible(false)
+      return
+    }
+    const onSelectionChange = () => {
+      const selection = window.getSelection()
+      const text = selection?.toString().trim()
+      if (text && text.length > 0) {
+        setSelectedText(text)
+        setCopyToolbarVisible(true)
+      } else {
+        setCopyToolbarVisible(false)
+        setSelectedText('')
+      }
+    }
+    document.addEventListener('selectionchange', onSelectionChange)
+    return () => document.removeEventListener('selectionchange', onSelectionChange)
+  }, [selectableMode])
+
+  const handleCopyText = useCallback(() => {
+    navigator.clipboard.writeText(selectedText).catch(() => {})
+    setCopyToolbarVisible(false)
+  }, [selectedText])
+
+  const handleShareText = useCallback(() => {
+    if (navigator.share) {
+      navigator.share({ text: selectedText }).catch(() => {})
+    } else {
+      navigator.clipboard.writeText(selectedText).catch(() => {})
+    }
+    setCopyToolbarVisible(false)
+  }, [selectedText])
+
+  const handleQuoteText = useCallback(async () => {
+    try {
+      await api.postChapterReview({
+        chapterId: chapterId ?? '',
+        rating: 5,
+        content: `"${selectedText}"`,
+      })
+    } catch { /* ignore */ }
+    setCopyToolbarVisible(false)
+  }, [selectedText, chapterId])
+
+  const handleGenerateArt = useCallback(async () => {
+    setArtGenerating(true)
+    try {
+      const result = await api.generateChapterArt({
+        chapterId: chapterId ?? '',
+        sourceId: sourceId ?? '',
+        mangaId: mangaId ?? '',
+      })
+      setArtGenerated(result)
+    } catch {
+      setArtGenerated(null)
+    }
+    setArtGenerating(false)
+  }, [chapterId, sourceId, mangaId])
 
   // --- Swipe gesture navigation ---
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null)
@@ -756,7 +841,7 @@ export function ReaderPage() {
       )}
 
       {/* --- Auto-scroll speed indicator --- */}
-      {mode === 'text' && autoScrollSpeed > 0 && barsVisible && !settingsSheetVisible && (
+      {mode === 'text' && autoScrollEnabled && autoScrollSpeed > 0 && barsVisible && !settingsSheetVisible && (
         <div className="absolute bottom-36 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-surface/80 backdrop-blur-sm border border-border-light shadow pointer-events-none animate-in fade-in">
           <Play className="w-3 h-3 text-accent" />
           <span className="text-[10px] font-medium text-text-muted tabular-nums">
@@ -799,6 +884,8 @@ export function ReaderPage() {
         title={chapterDisplayTitle}
         onBack={() => navigate(-1)}
         onSettings={() => { setSettingsSheetVisible(true); setBarsVisible(false) }}
+        onReview={() => setReviewDialogVisible(true)}
+        onGenerateArt={() => setArtDialogVisible(true)}
         visible={barsVisible && !settingsSheetVisible}
       />
 
@@ -821,13 +908,32 @@ export function ReaderPage() {
         visible={replaceVisible}
       />
 
-      {/* --- Auto-next indicator --- */}
-      {loadingNext && (
-        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-surface/80 backdrop-blur-sm rounded-full px-3 py-1.5 border border-border-light shadow animate-in fade-in zoom-in">
-          <Loader2 className="w-3 h-3 text-accent animate-spin" strokeWidth={2} />
-          <span className="text-[10px] text-text-muted font-medium">Loading next…</span>
-        </div>
+      {/* --- Plugins button (puzzle icon) in top bar area --- */}
+      {barsVisible && !settingsSheetVisible && !pluginPanelVisible && (
+        <button
+          onClick={() => setPluginPanelVisible(true)}
+          className="fixed top-12 right-4 z-40 w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary/70 hover:text-text hover:bg-white/10 transition-colors"
+          aria-label="Plugins"
+          title="Chapter plugins"
+        >
+          <Puzzle className="w-4 h-4" strokeWidth={1.5} />
+        </button>
       )}
+
+      {/* --- Chapters slider button (sliders icon) --- */}
+      {barsVisible && !settingsSheetVisible && (
+        <button
+          onClick={() => setChaptersSliderVisible(true)}
+          className="fixed top-12 right-14 z-40 w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary/70 hover:text-text hover:bg-white/10 transition-colors"
+          aria-label="Chapter slider"
+          title="Chapter slider"
+        >
+          <Sliders className="w-4 h-4" strokeWidth={1.5} />
+        </button>
+      )}
+
+      {/* --- Preload indicator + Auto-next indicator --- */}
+      <PreloadIndicator loadingNext={loadingNext} barsVisible={barsVisible} />
 
       {/* --- Floating action buttons (TTS + Stats) --- */}
       {barsVisible && !settingsSheetVisible && !ttsSheetVisible && (
@@ -875,6 +981,11 @@ export function ReaderPage() {
         </button>
       )}
 
+      {/* --- Gamification overlay (bottom-right) --- */}
+      <div className="fixed bottom-20 right-4 z-30">
+        <ReaderGamificationOverlay barsVisible={barsVisible && !settingsSheetVisible} />
+      </div>
+
       {/* --- Translation toggle --- */}
       {mode === 'text' && barsVisible && !settingsSheetVisible && ttsState === 'idle' && (
         <button
@@ -917,6 +1028,15 @@ export function ReaderPage() {
           })
         }}
         onClose={() => setReportDialogVisible(false)}
+      />
+
+      {/* --- Chapters Slider (pull-up) --- */}
+      <ChaptersSlider
+        chapters={chapters}
+        currentChapterIndex={currentChapterIndex}
+        onChapterSelect={handleChapterSelect}
+        visible={chaptersSliderVisible}
+        onClose={() => setChaptersSliderVisible(false)}
       />
 
       {/* --- Chapter Drawer --- */}
@@ -969,6 +1089,121 @@ export function ReaderPage() {
         onClose={() => { setTranslationPanelVisible(false); setBarsVisible(true) }}
         textContent={textContent}
       />
+
+      {/* --- Copy Mode Toolbar --- */}
+      {copyToolbarVisible && selectableMode && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 bg-surface/95 backdrop-blur-md rounded-full px-2 py-1.5 border border-border-light shadow-xl animate-in fade-in zoom-in">
+          <button onClick={handleCopyText} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover text-xs font-medium text-text transition-colors" title="Copy">
+            <Copy className="w-3.5 h-3.5" /> Copy
+          </button>
+          <div className="w-px h-5 bg-border-light" />
+          <button onClick={handleShareText} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover text-xs font-medium text-text transition-colors" title="Share">
+            <Share2 className="w-3.5 h-3.5" /> Share
+          </button>
+          <div className="w-px h-5 bg-border-light" />
+          <button onClick={handleQuoteText} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover text-xs font-medium text-accent transition-colors" title="Create quote">
+            <Quote className="w-3.5 h-3.5" /> Quote
+          </button>
+        </div>
+      )}
+
+      {/* --- Plugin Panel --- */}
+      <ReaderPluginPanel
+        chapterId={chapterId ?? ''}
+        visible={pluginPanelVisible}
+        onClose={() => setPluginPanelVisible(false)}
+      />
+
+      {/* --- Review Dialog --- */}
+      {reviewDialogVisible && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setReviewDialogVisible(false)}>
+          <div className="bg-surface rounded-2xl shadow-2xl border border-border-light w-[340px] max-w-[90vw] p-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-text">Review Chapter</h3>
+              <button onClick={() => setReviewDialogVisible(false)} className="w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-surface-hover">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <ReviewForm chapterId={chapterId ?? ''} onSubmitted={() => setReviewDialogVisible(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* --- Art Generation Dialog --- */}
+      {artDialogVisible && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => { setArtDialogVisible(false); if (!artGenerating) setArtGenerated(null) }}>
+          <div className="bg-surface rounded-2xl shadow-2xl border border-border-light w-[340px] max-w-[90vw] p-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-text">Chapter Art</h3>
+              <button onClick={() => { setArtDialogVisible(false); setArtGenerated(null) }} className="w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-surface-hover">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {artGenerating ? (
+              <div className="flex flex-col items-center gap-3 py-8">
+                <Loader2 className="w-8 h-8 text-accent animate-spin" />
+                <p className="text-xs text-text-muted">Generating art…</p>
+              </div>
+            ) : artGenerated ? (
+              <div className="flex flex-col items-center gap-3">
+                <img src={artGenerated.imageUrl} alt={artGenerated.caption || 'Generated art'} className="w-full rounded-xl" />
+                {artGenerated.caption && <p className="text-xs text-text-muted">{artGenerated.caption}</p>}
+                <button onClick={() => { setArtDialogVisible(false); setArtGenerated(null) }} className="text-xs text-accent hover:underline">Close</button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <p className="text-xs text-text-muted">Generate AI art based on this chapter's content.</p>
+                <button onClick={handleGenerateArt} className="w-full py-2 rounded-xl bg-accent text-black text-sm font-medium hover:bg-accent/90 transition-colors">
+                  Generate Art
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Review Form (inline) ──────────────────────────────────────────
+function ReviewForm({ chapterId, onSubmitted }: { chapterId: string; onSubmitted: () => void }) {
+  const [rating, setRating] = useState(5)
+  const [content, setContent] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleSubmit = async () => {
+    if (!content.trim()) return
+    setSubmitting(true)
+    try {
+      await api.postChapterReview({ chapterId, rating, content })
+      onSubmitted()
+    } catch { /* ignore */ }
+    setSubmitting(false)
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-1">
+        {[1,2,3,4,5].map(n => (
+          <button key={n} onClick={() => setRating(n)} className="p-0.5">
+            <Star className={`w-4 h-4 ${n <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-text-muted/30'}`} />
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={content}
+        onChange={e => setContent(e.target.value)}
+        placeholder="Write your review…"
+        rows={3}
+        className="w-full bg-surface-hover/30 border border-border-light rounded-xl px-3 py-2 text-xs text-text placeholder:text-text-muted/40 outline-none focus:border-accent/50 resize-none"
+      />
+      <button
+        onClick={handleSubmit}
+        disabled={submitting || !content.trim()}
+        className="w-full py-2 rounded-xl bg-accent text-black text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
+      >
+        {submitting ? 'Submitting…' : 'Submit Review'}
+      </button>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { Globe, BookOpen, Download, Palette, Wifi, Shield, HardDrive, Database, Puzzle, Zap, Info, ChevronRight, Volume2, Languages, Search } from 'lucide-react'
+import { Globe, BookOpen, Download, Palette, Wifi, Shield, HardDrive, Database, Puzzle, Zap, Info, ChevronRight, Volume2, Languages, Search, Image, Users, Trophy, Quote, User, Cloud } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useRef } from 'react'
 
@@ -7,6 +7,7 @@ const groups = [
     title: 'General',
     items: [
       { icon: Globe, label: 'General', subtitle: 'Language, startup page', to: '/settings/general' },
+      { icon: User, label: 'Profile', subtitle: 'Avatar, username, bio', to: '/profile' },
     ],
   },
   {
@@ -31,6 +32,16 @@ const groups = [
       { icon: Wifi, label: 'Network', subtitle: 'DNS, timeout, user agent', to: '/settings/network' },
       { icon: Shield, label: 'Security', subtitle: 'App lock, encryption', to: '/settings/security' },
       { icon: HardDrive, label: 'Backup & Restore', subtitle: 'Export or import', to: '/backup' },
+      { icon: Cloud, label: 'Cloud Backup', subtitle: 'Google Drive cloud sync', to: '/backup/cloud' },
+    ],
+  },
+  {
+    title: 'Social',
+    items: [
+      { icon: Users, label: 'Community', subtitle: 'Activity feed, friends', to: '/community' },
+      { icon: Trophy, label: 'Leaderboard', subtitle: 'Rankings, achievements', to: '/leaderboard' },
+      { icon: Quote, label: 'Quotes', subtitle: 'Saved book quotes', to: '/quotes' },
+      { icon: Image, label: 'Character Art', subtitle: 'Browse character artwork', to: '/character-art' },
     ],
   },
   {

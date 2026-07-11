@@ -2,7 +2,7 @@
   "name": "ireader-next",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @ireader/backend dev & sleep 2 && pnpm --filter @ireader/frontend dev",
+    "dev": "IREADER_DB_PATH='./data/ireader.db' pnpm --filter @ireader/backend dev & sleep 2 && pnpm --filter @ireader/frontend dev",
     "build": "pnpm --filter @ireader/backend build && pnpm --filter @ireader/frontend build",
     "build:mobile": "pnpm --filter @ireader/frontend build && pnpm --filter @ireader/mobile build",
     "test": "vitest run",

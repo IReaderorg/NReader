@@ -94,6 +94,7 @@ interface ReaderStore {
   paragraphIndent: number
   textAlignment: TextAlignment
   /** Auto-scroll (persisted) */
+  autoScrollEnabled: boolean
   autoScrollSpeed: number
   /** Content filter (persisted) */
   contentFilterEnabled: boolean
@@ -118,8 +119,12 @@ interface ReaderStore {
   pagerDirection: 'ltr' | 'rtl'
   /** Bookmark state */
   isBookmarked: boolean
+  // ─── Chapters slider ──────────────────────────────────────────────────
+  chaptersSliderVisible: boolean
+  setChaptersSliderVisible: (v: boolean) => void
   /** Session-only */
   brightness: number
+  autoBrightness: boolean
   currentPage: number
   totalPages: number
   progress: number
@@ -149,6 +154,7 @@ interface ReaderStore {
   openChapter: (sourceId: string, mangaId: string, chapterId: string, chapterNumber: number) => void
   setMode: (mode: ReaderMode) => void
   setBrightness: (value: number) => void
+  setAutoBrightness: (v: boolean) => void
   setFontSize: (value: number) => void
   setPage: (page: number, total: number) => void
   setProgress: (progress: number) => void
@@ -163,6 +169,7 @@ interface ReaderStore {
   setParagraphIndent: (value: number) => void
   setTextAlignment: (align: TextAlignment) => void
   /** Auto-scroll */
+  setAutoScrollEnabled: (v: boolean) => void
   setAutoScrollSpeed: (speed: number) => void
   /** Content filter */
   setContentFilterEnabled: (enabled: boolean) => void
@@ -211,6 +218,7 @@ export const useReaderStore = create<ReaderStore>()(
       paragraphSpacing: 16,
       paragraphIndent: 0,
       textAlignment: 'left',
+      autoScrollEnabled: false,
       autoScrollSpeed: 5,
       contentFilterEnabled: false,
       contentFilterPatterns: DEFAULT_CONTENT_FILTER_PATTERNS,
@@ -228,7 +236,9 @@ export const useReaderStore = create<ReaderStore>()(
       reducedAnimations: false,
       pagerDirection: 'ltr',
       isBookmarked: false,
+      chaptersSliderVisible: false,
       brightness: 100,
+      autoBrightness: false,
       currentPage: 0,
       totalPages: 0,
       progress: 0,
@@ -265,6 +275,7 @@ export const useReaderStore = create<ReaderStore>()(
 
       setMode: (mode) => set({ mode }),
       setBrightness: (value) => set({ brightness: value }),
+      setAutoBrightness: (v) => set({ autoBrightness: v }),
       setFontSize: (value) => set({ fontSize: value }),
       setPage: (page, total) => set({ currentPage: page, totalPages: total }),
       setProgress: (progress) => set({ progress }),
@@ -285,6 +296,7 @@ export const useReaderStore = create<ReaderStore>()(
       setParagraphSpacing: (value) => set({ paragraphSpacing: value }),
       setParagraphIndent: (value) => set({ paragraphIndent: value }),
       setTextAlignment: (align) => set({ textAlignment: align }),
+      setAutoScrollEnabled: (v) => set({ autoScrollEnabled: v }),
       setAutoScrollSpeed: (speed) => set({ autoScrollSpeed: speed }),
       setContentFilterEnabled: (enabled) => set({ contentFilterEnabled: enabled }),
       setContentFilterPatterns: (patterns) => set({ contentFilterPatterns: patterns }),
@@ -302,6 +314,7 @@ export const useReaderStore = create<ReaderStore>()(
       setReducedAnimations: (v) => set({ reducedAnimations: v }),
       setPagerDirection: (d) => set({ pagerDirection: d }),
       setBookmarked: (v) => set({ isBookmarked: v }),
+      setChaptersSliderVisible: (v) => set({ chaptersSliderVisible: v }),
     }),
     {
       name: 'nreader-reader-store',
@@ -315,6 +328,7 @@ export const useReaderStore = create<ReaderStore>()(
         paragraphSpacing: state.paragraphSpacing,
         paragraphIndent: state.paragraphIndent,
         textAlignment: state.textAlignment,
+        autoScrollEnabled: state.autoScrollEnabled,
         autoScrollSpeed: state.autoScrollSpeed,
         contentFilterEnabled: state.contentFilterEnabled,
         contentFilterPatterns: state.contentFilterPatterns,

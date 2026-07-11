@@ -33,13 +33,15 @@ export function OnboardingPage() {
   const Icon = current.icon
 
   const handleFinish = async () => {
-    await api.setSetting('onboardingComplete', true).catch(() => {})
-    navigate('/sources')
+    try { await api.setSetting('onboardingComplete', true) } catch {}
+    navigate('/library')
   }
 
   const handleSkip = async () => {
-    await api.setSetting('onboardingComplete', true).catch(() => {})
-    navigate('/')
+    try { await api.setSetting('onboardingComplete', true) } catch {}
+    // Store in localStorage as fallback for first run
+    localStorage.setItem('onboardingComplete', 'true')
+    navigate('/library')
   }
 
   return (

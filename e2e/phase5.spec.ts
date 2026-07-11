@@ -63,7 +63,7 @@ test.describe('Phase 5: Backup + Extended Plugins', () => {
 
   test('Frontend: more page has backup and plugin links', async ({ page }) => {
     await page.goto('/more')
-    await expect(page.locator('text=Backup & Restore')).toBeVisible({ timeout: 5000 })
-    await expect(page.locator('text=Plugin Manager')).toBeVisible()
+    await expect(page.getByRole('link', { name: /Backup.*Restore/i }).first()).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('link', { name: /Plugin Manager/i })).toBeVisible()
   })
 })

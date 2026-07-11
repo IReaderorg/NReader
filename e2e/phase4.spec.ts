@@ -52,14 +52,15 @@ test.describe('Phase 4: TTS + Translation', () => {
     await page.goto('/settings/translation')
     await expect(page.getByRole('heading', { name: 'Translation' })).toBeVisible({ timeout: 5000 })
     await expect(page.locator('text=Enable Translation')).toBeVisible()
-    await expect(page.locator('text=DeepL')).toBeVisible()
+    // Look for Deepl in the engine buttons (there's also a "DeepL Configure" button in engine settings)
+    await expect(page.getByRole('button', { name: 'Deepl', exact: true })).toBeVisible()
     await expect(page.locator('text=Mock')).toBeVisible()
   })
 
   test('Frontend: settings page has TTS and translation tabs', async ({ page }) => {
     await page.goto('/settings')
-    await expect(page.locator('text=TTS')).toBeVisible({ timeout: 5000 })
-    await expect(page.locator('text=Translate')).toBeVisible()
+    await expect(page.getByRole('link', { name: /Text-to-Speech/i })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('link', { name: /Translation/i })).toBeVisible()
   })
 
   test('Frontend: glossary CRUD workflow', async ({ page }) => {

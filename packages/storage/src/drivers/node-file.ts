@@ -6,10 +6,22 @@ import { MemoryDriver } from './memory.js'
 
 export class NodeFileDriver extends MemoryDriver {
   private dbPath: string
+  private saveTimer: ReturnType<typeof setTimeout> | null = null
+  private persistPromise: Promise<void> = Promise.resolve()
 
   constructor(db: SqlJsDatabase, SQL: SqlJsStatic, dbPath: string) {
     super(db, SQL)
     this.dbPath = dbPath
+  }
+
+  private scheduleSave(): void {
+    if (this.saveTimer) clearTimeout(this.saveTimer)
+    this.saveTimer = setTimeout(() => this.flush(), 1000)
+  }
+
+  private async flush(): Promise<void> {
+    this.persistPromise = this.persist()
+    await this.persistPromise
   }
 
   private async persist(): Promise<void> {
@@ -18,7 +30,24 @@ export class NodeFileDriver extends MemoryDriver {
     await writeFile(this.dbPath, data)
   }
 
+  run(sql: string, params?: any[]): { changes: number; lastInsertRowid: number } {
+    const result = super.run(sql, params)
+    this.scheduleSave()
+    return result
+  }
+
+  transaction<T>(fn: () => T): T {
+    const result = super.transaction(fn)
+    this.scheduleSave()
+    return result
+  }
+
   async close(): Promise<void> {
+    if (this.saveTimer) {
+      clearTimeout(this.saveTimer)
+      this.saveTimer = null
+    }
+    await this.persistPromise
     await this.persist()
     this.db.close()
   }

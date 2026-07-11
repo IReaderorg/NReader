@@ -69,7 +69,7 @@ export function ReaderPage() {
   } = useReaderStore()
 
   const { recordProgress } = useHistoryStore()
-  const { speak, pause, resume, state: ttsState, charIndex } = useTtsStore()
+  const { speak, pause, resume, stop, state: ttsState, charIndex } = useTtsStore()
 
   // Data state
   const [pages, setPages] = useState<Page[]>([])

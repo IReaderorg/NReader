@@ -15,9 +15,10 @@ export function SourceManagerPage() {
   const [repoSources, setRepoSources] = useState<Array<{ id: string; name: string; lang: string; baseUrl: string; version: string; initFunction?: string; pkg?: string; bundle?: boolean }>>([])
   const [repoLoading, setRepoLoading] = useState(false)
   const [installing, setInstalling] = useState<string | null>(null)
+// Predefined repo URLs for quick-add
+const IREADER_REPO_URL = 'https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repov2/js-dist/js-index.json'
+const LNREADER_REPO_URL = 'https://raw.githubusercontent.com/kazemcodes/lnreader-plugins-unminified/refs/heads/repo/plugins/plugins.min.json'
 
-  // Predefined repo URLs for quick-add
-  const IREADER_REPO_URL = 'https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repov2/js-dist/js-index.json'
 
   const load = () => {
     setLoading(true)
@@ -91,6 +92,18 @@ export function SourceManagerPage() {
           >
             <BookOpen className="w-3.5 h-3.5" strokeWidth={1.5} />
             Add IReader Repo
+          </button>
+          <button
+            onClick={() => {
+              setRepoUrl(LNREADER_REPO_URL)
+              setShowRepo(true)
+              setTimeout(() => browseRepo(), 100)
+            }}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-500 transition-colors"
+            title="Browse the kazemcodes LNReader plugin repository (120+ JS novel sources)"
+          >
+            <BookOpen className="w-3.5 h-3.5" strokeWidth={1.5} />
+            Add LNReader Repo
           </button>
           <button
             onClick={() => setShowRepo(!showRepo)}

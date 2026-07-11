@@ -1,7 +1,6 @@
 import { Hono } from 'hono'
 import fs from 'node:fs'
 import path from 'node:path'
-import crypto from 'node:crypto'
 
 export function createSourcesRouter(pluginService: {
   getAllPlugins(): any[]
@@ -11,128 +10,63 @@ export function createSourcesRouter(pluginService: {
 }): Hono {
   const app = new Hono()
 
-  app.get('/', (c) => {
-    return c.json(pluginService.getAllPlugins())
-  })
-
-  app.get('/:id', (c) => {
-    const { id } = c.req.param()
-    const plugin = pluginService.getPlugin(id)
-    if (!plugin) return c.json({ error: 'Source not found', code: 'NOT_FOUND', status: 404 }, 404)
-    return c.json(plugin)
-  })
-
-  app.get('/:id/popular', async (c) => {
-    const { id } = c.req.param()
-    const page = Number(c.req.query('page')) || 1
-    try {
-      return c.json(await pluginService.executePluginMethod(id, 'popular', [page]))
-    } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
-    }
-  })
-
-  app.get('/:id/search', async (c) => {
-    const { id } = c.req.param()
-    const query = c.req.query('q')
-    const page = Number(c.req.query('page')) || 1
-    if (!query) return c.json({ error: 'Query parameter q is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
-    try {
-      return c.json(await pluginService.executePluginMethod(id, 'search', [query, page]))
-    } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
-    }
-  })
-
-  app.get('/:id/latest', async (c) => {
-    const { id } = c.req.param()
-    const page = Number(c.req.query('page')) || 1
-    try {
-      return c.json(await pluginService.executePluginMethod(id, 'latest', [page]))
-    } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
-    }
-  })
-
-  app.get('/:id/detail/:mangaId', async (c) => {
-    const { id, mangaId } = c.req.param()
-    try {
-      return c.json(await pluginService.executePluginMethod(id, 'mangaDetail', [mangaId]))
-    } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
-    }
-  })
-
-  app.get('/:id/chapters/:mangaId', async (c) => {
-    const { id, mangaId } = c.req.param()
-    try {
-      return c.json(await pluginService.executePluginMethod(id, 'chapters', [mangaId]))
-    } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
-    }
-  })
-
-  app.get('/:id/pages/:chapterId', async (c) => {
-    const { id, chapterId } = c.req.param()
-    try {
-      return c.json(await pluginService.executePluginMethod(id, 'pages', [chapterId]))
-    } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
-    }
-  })
+  // ─────────────────────────────────────────────
+  // Fixed-path routes (MUST come before /:id catch-all)
+  // ─────────────────────────────────────────────
 
   /**
-   * Get text content for a chapter (for novel-type sources).
-   * Returns a JSON array of text strings.
+   * List available sources from a repository URL.
+   * Supports:
+   * - Standard JSON array of source descriptors
+   * - IReader js-index.json format (array of objects with pkg, name, id, lang, initFunction)
+   * - LNReader manifest format (array with site, url fields)
    */
-  app.get('/:id/text/:chapterId', async (c) => {
-    const { id, chapterId } = c.req.param()
+  app.get('/repository', async (c) => {
+    const repoUrl = c.req.query('url')
+    if (!repoUrl) return c.json({ error: 'url query param is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
     try {
-      // IReader sources route to getText; native plugins fall back to pages filter
-      const isIReader = pluginService.isIReaderPlugin?.(id) ?? false
-      if (isIReader) {
-        const text = await pluginService.executePluginMethod(id, 'getText', [chapterId])
-        return c.json(text)
+      const res = await fetch(repoUrl)
+      if (!res.ok) throw new Error(`Failed to fetch repo: ${res.statusText}`)
+      const data = await res.json()
+
+      // Normalize to standard source list format
+      let sources: any[]
+      if (Array.isArray(data)) {
+        if (data.length > 0 && data[0].pkg && data[0].initFunction) {
+          // IReader js-index.json format
+          sources = data.map((s: any) => ({
+            id: String(s.id || s.name?.toLowerCase().replace(/[^a-z0-9]/g, '')),
+            name: s.name,
+            lang: s.lang || 'en',
+            baseUrl: `https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repov2/js-dist/${s.file || 'sources-bundle.js'}`,
+            version: s.version || '1.0.0',
+            initFunction: s.initFunction,
+            pkg: s.pkg,
+            bundle: true,
+          }))
+        } else if (data.length > 0 && data[0].site && data[0].url?.endsWith('.js') && !data[0].pkg) {
+          // LNReader manifest format (site + url fields, no pkg/initFunction)
+          sources = data.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            lang: s.lang || 'en',
+            baseUrl: s.url,
+            version: s.version || '1.0.0',
+            site: s.site,
+          }))
+        } else {
+          // Standard format
+          sources = data
+        }
+      } else if (data.sources && Array.isArray(data.sources)) {
+        sources = data.sources
+      } else {
+        sources = []
       }
-      // Native plugins: get pages and filter for text-based ones
-      const pages = await pluginService.executePluginMethod(id, 'pages', [chapterId]) as any[]
-      const textPages = pages.filter((p: any) => !p.url || p.url === '')
-      if (textPages.length > 0) {
-        return c.json(textPages.map((p: any) => p.text || ''))
-      }
-      return c.json([])
+
+      return c.json(sources)
     } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
-    }
-  })
-
-  // --- Source Repository Support ---
-
-  /**
-   * Get categories/genres for a source.
-   */
-  app.get('/:id/categories', async (c) => {
-    const { id } = c.req.param()
-    try {
-      const categories = await pluginService.executePluginMethod(id, 'categories', [])
-      return c.json(categories)
-    } catch {
-      // Fallback: return empty list if plugin doesn't support categories
-      return c.json([])
-    }
-  })
-
-  /**
-   * Browse manga by category/genre for a source.
-   */
-  app.get('/:id/browse/:category', async (c) => {
-    const { id, category } = c.req.param()
-    const page = Number(c.req.query('page')) || 1
-    try {
-      const results = await pluginService.executePluginMethod(id, 'browse', [category, page])
-      return c.json(results)
-    } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'REPO_ERROR', status: 502 }, 502)
     }
   })
 
@@ -181,51 +115,6 @@ export function createSourcesRouter(pluginService: {
       return c.json({ success: true, pluginId, path: dest })
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : String(err), code: 'INSTALL_ERROR', status: 502 }, 502)
-    }
-  })
-
-  /**
-   * List available sources from a repository URL.
-   * Supports:
-   * - Standard JSON array of source descriptors
-   * - IReader js-index.json format (array of objects with pkg, name, id, lang, initFunction)
-   */
-  app.get('/repository', async (c) => {
-    const repoUrl = c.req.query('url')
-    if (!repoUrl) return c.json({ error: 'url query param is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
-    try {
-      const res = await fetch(repoUrl)
-      if (!res.ok) throw new Error(`Failed to fetch repo: ${res.statusText}`)
-      const data = await res.json()
-
-      // Normalize to standard source list format
-      let sources: any[]
-      if (Array.isArray(data)) {
-        if (data.length > 0 && data[0].pkg && data[0].initFunction) {
-          // IReader js-index.json format
-          sources = data.map((s: any) => ({
-            id: String(s.id || s.name?.toLowerCase().replace(/[^a-z0-9]/g, '')),
-            name: s.name,
-            lang: s.lang || 'en',
-            baseUrl: `https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repov2/js-dist/${s.file || 'sources-bundle.js'}`,
-            version: s.version || '1.0.0',
-            initFunction: s.initFunction,
-            pkg: s.pkg,
-            bundle: true,
-          }))
-        } else {
-          // Standard format
-          sources = data
-        }
-      } else if (data.sources && Array.isArray(data.sources)) {
-        sources = data.sources
-      } else {
-        sources = []
-      }
-
-      return c.json(sources)
-    } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'REPO_ERROR', status: 502 }, 502)
     }
   })
 
@@ -287,7 +176,7 @@ export function createSourcesRouter(pluginService: {
     }
     try {
       // Get source chapters
-      const sourceChapters = await pluginService.executePluginMethod<any[]>(sourceId, 'chapters', [mangaId])
+      const sourceChapters = await pluginService.executePluginMethod(sourceId, 'chapters', [mangaId])
       // Get target chapters
       const targetChapters = await pluginService.executePluginMethod(targetSourceId, 'chapters', [targetMangaId]) as any[]
 
@@ -318,6 +207,161 @@ export function createSourcesRouter(pluginService: {
       })
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : String(err), code: 'MIGRATION_ERROR', status: 502 }, 502)
+    }
+  })
+
+  // ─────────────────────────────────────────────
+  // Root listing
+  // ─────────────────────────────────────────────
+
+  app.get('/', (c) => {
+    return c.json(pluginService.getAllPlugins())
+  })
+
+  // ─────────────────────────────────────────────
+  // Parameterized source routes (/:id/...)
+  // ─────────────────────────────────────────────
+
+  app.get('/:id', (c) => {
+    const { id } = c.req.param()
+    const plugin = pluginService.getPlugin(id)
+    if (!plugin) return c.json({ error: 'Source not found', code: 'NOT_FOUND', status: 404 }, 404)
+    return c.json(plugin)
+  })
+
+  app.get('/:id/popular', async (c) => {
+    const { id } = c.req.param()
+    const page = Number(c.req.query('page')) || 1
+    try {
+      return c.json(await pluginService.executePluginMethod(id, 'popular', [page]))
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
+
+  app.get('/:id/search', async (c) => {
+    const { id } = c.req.param()
+    const query = c.req.query('q')
+    const page = Number(c.req.query('page')) || 1
+    if (!query) return c.json({ error: 'Query parameter q is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+    try {
+      return c.json(await pluginService.executePluginMethod(id, 'search', [query, page]))
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
+
+  app.get('/:id/latest', async (c) => {
+    const { id } = c.req.param()
+    const page = Number(c.req.query('page')) || 1
+    try {
+      return c.json(await pluginService.executePluginMethod(id, 'latest', [page]))
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
+
+  app.get('/:id/detail/*', async (c) => {
+    const { id } = c.req.param()
+    // Extract mangaId from the wildcard portion of the path
+    const prefix = `/api/v1/sources/${id}/detail/`
+    const fullPath = c.req.path
+    const rawMangaId = fullPath.substring(prefix.length, fullPath.includes('?') ? fullPath.indexOf('?') : undefined)
+    if (!rawMangaId) return c.json({ error: 'mangaId is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+    const mangaId = decodeURIComponent(rawMangaId)
+    try {
+      return c.json(await pluginService.executePluginMethod(id, 'mangaDetail', [mangaId]))
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
+
+  app.get('/:id/chapters/*', async (c) => {
+    const { id } = c.req.param()
+    const prefix = `/api/v1/sources/${id}/chapters/`
+    const fullPath = c.req.path
+    const rawMangaId = fullPath.substring(prefix.length, fullPath.includes('?') ? fullPath.indexOf('?') : undefined)
+    if (!rawMangaId) return c.json({ error: 'mangaId is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+    const mangaId = decodeURIComponent(rawMangaId)
+    try {
+      return c.json(await pluginService.executePluginMethod(id, 'chapters', [mangaId]))
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
+
+  app.get('/:id/pages/*', async (c) => {
+    const { id } = c.req.param()
+    const prefix = `/api/v1/sources/${id}/pages/`
+    const fullPath = c.req.path
+    const rawChapterId = fullPath.substring(prefix.length, fullPath.includes('?') ? fullPath.indexOf('?') : undefined)
+    if (!rawChapterId) return c.json({ error: 'chapterId is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+    const chapterId = decodeURIComponent(rawChapterId)
+    try {
+      return c.json(await pluginService.executePluginMethod(id, 'pages', [chapterId]))
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
+
+  /**
+   * Get text content for a chapter (for novel-type sources).
+   * Returns a JSON array of text strings.
+   */
+  app.get('/:id/text/*', async (c) => {
+    const { id } = c.req.param()
+    const prefix = `/api/v1/sources/${id}/text/`
+    const fullPath = c.req.path
+    const chapterId = decodeURIComponent(fullPath.substring(prefix.length, fullPath.includes('?') ? fullPath.indexOf('?') : undefined))
+    if (!chapterId) return c.json({ error: 'chapterId is required', code: 'VALIDATION_ERROR', status: 400 }, 400)
+    try {
+      // IReader sources route to getText; native plugins fall back to pages filter
+      const isIReader = pluginService.isIReaderPlugin?.(id) ?? false
+      if (isIReader) {
+        const text = await pluginService.executePluginMethod(id, 'getText', [chapterId])
+        // Return as string array for consistent frontend contract
+        if (typeof text === 'string') return c.json(text ? [text] : [])
+        return c.json(text)
+      }
+      // Native plugins: get pages and filter for text-based ones
+      const pages = await pluginService.executePluginMethod(id, 'pages', [chapterId]) as any[]
+      const textPages = pages.filter((p: any) => !p.url || p.url === '')
+      if (textPages.length > 0) {
+        return c.json(textPages.map((p: any) => p.text || ''))
+      }
+      return c.json([])
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
+    }
+  })
+
+  // --- Source Repository Support ---
+
+  /**
+   * Get categories/genres for a source.
+   */
+  app.get('/:id/categories', async (c) => {
+    const { id } = c.req.param()
+    try {
+      const categories = await pluginService.executePluginMethod(id, 'categories', [])
+      return c.json(categories)
+    } catch {
+      // Fallback: return empty list if plugin doesn't support categories
+      return c.json([])
+    }
+  })
+
+  /**
+   * Browse manga by category/genre for a source.
+   */
+  app.get('/:id/browse/:category', async (c) => {
+    const { id, category } = c.req.param()
+    const page = Number(c.req.query('page')) || 1
+    try {
+      const results = await pluginService.executePluginMethod(id, 'browse', [category, page])
+      return c.json(results)
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err), code: 'PLUGIN_ERROR', status: 502 }, 502)
     }
   })
 

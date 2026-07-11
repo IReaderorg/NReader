@@ -1,12 +1,20 @@
 import { serve } from '@hono/node-server'
 import type { IncomingMessage } from 'node:http'
 import { WebSocketServer, WebSocket } from 'ws'
-import { startApp } from './index.js'
+import { startApp, shutdownApp } from './index.js'
 import { wsManager } from './ws/ws-manager.js'
 
 const PORT = Number(process.env.PORT) || 8080
 
 const app = await startApp()
+
+function shutdown(): void {
+  console.log('Shutting down gracefully...')
+  shutdownApp().then(() => process.exit(0)).catch(() => process.exit(1))
+}
+
+process.on('SIGINT', shutdown)
+process.on('SIGTERM', shutdown)
 
 const server = serve({ fetch: app.fetch, port: PORT }, (info) => {
   console.log(`Backend ready at http://localhost:${info.port}`)

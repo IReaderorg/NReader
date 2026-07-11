@@ -38,6 +38,7 @@ import { PluginService } from './plugins/plugin-service.js'
 import { createDatabase, runMigrations, migration_001, migration_002, migration_003 } from '@ireader/storage'
 import { migration_004, migration_005, migration_006, migration_007 } from '@ireader/storage'
 import { SqliteLibraryRepository, SqliteHistoryRepository, SqliteSettingsRepository, SqliteDownloadRepository, SqliteGlossaryRepository } from '@ireader/storage'
+import type { DatabaseDriver, SQLiteDriver } from '@ireader/storage'
 
 const app = new Hono()
 app.use('/api/*', cors({ origin: ['http://localhost:5173', 'http://localhost:8080'] }))
@@ -45,8 +46,22 @@ app.onError(errorHandler)
 
 const pluginsDir = path.resolve(process.cwd(), 'plugins')
 
+let _db: (DatabaseDriver & SQLiteDriver) | null = null
+
+export function getDb(): (DatabaseDriver & SQLiteDriver) | null {
+  return _db
+}
+
+export async function shutdownApp(): Promise<void> {
+  if (_db) {
+    await _db.close()
+    _db = null
+  }
+}
+
 export async function startApp(dbType?: 'memory' | 'node' | 'capacitor'): Promise<Hono> {
   const db = await createDatabase(dbType)
+  _db = db
   await runMigrations(db, [migration_001, migration_002, migration_003, migration_004, migration_005, migration_006, migration_007])
 
   const libraryRepo = new SqliteLibraryRepository(db)

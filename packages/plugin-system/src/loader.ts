@@ -5,6 +5,8 @@ import { validatePlugin } from './validator.js'
 import { isIReaderSource, createIReaderAdapter, createJsDependencies, isJsonConfigSource, createJsonConfigAdapter } from './ireader-bridge.js'
 import { isTachiyomiSource, createTachiyomiAdapter } from './tachiyomi-bridge.js'
 import { isLNReaderSource, createLNReaderAdapter } from './lnreader-bridge.js'
+import { isMadaraSource, createMadaraAdapter } from './madara-bridge.js'
+import { isMultisrcSource, createMultisrcAdapter } from './multisrc-bridge.js'
 import { isJarFile, loadJarSource } from './jar-loader.js'
 import type { IReaderPluginAdapter } from './ireader-bridge.js'
 import type { IReaderJsonConfig } from './ireader-bridge.js'
@@ -170,10 +172,14 @@ export class PluginLoader {
       const mockContext = { module: { exports: {} }, exports: {}, console }
       const fn = new Function('module', 'exports', 'console', code)
       fn(mockContext.module, mockContext.exports, console)
-      const pluginExports = mockContext.module.exports || mockContext.exports
+      // Prefer exports over module.exports: some bundled plugins (e.g. Madara/LNReader)
+      // set module.exports = this at the end, corrupting the proper export path.
+      const pluginExports = (mockContext.exports && Object.keys(mockContext.exports).length > 0)
+        ? mockContext.exports
+        : mockContext.module.exports
       const plugin = (pluginExports as any).default || pluginExports
 
-      // Auto-detect source format: IReader → Tachiyomi → LNReader
+      // Auto-detect source format: IReader → Tachiyomi → LNReader → Madara → Multisrc
       let detectedAdapter: IReaderPluginAdapter | null = null
       const pluginObj = plugin as Record<string, unknown>
 
@@ -186,6 +192,12 @@ export class PluginLoader {
       } else if (isLNReaderSource(pluginObj)) {
         const deps = createJsDependencies((plugin as any).baseUrl || `https://${pluginId}.local`)
         detectedAdapter = createLNReaderAdapter(plugin as any, deps)
+      } else if (isMadaraSource(pluginObj)) {
+        const deps = createJsDependencies((plugin as any).baseUrl || `https://${pluginId}.local`)
+        detectedAdapter = createMadaraAdapter(plugin as any, deps)
+      } else if (isMultisrcSource(pluginObj)) {
+        const deps = createJsDependencies((plugin as any).baseUrl || `https://${pluginId}.local`)
+        detectedAdapter = createMultisrcAdapter(plugin as any, deps)
       }
 
       if (detectedAdapter) {
